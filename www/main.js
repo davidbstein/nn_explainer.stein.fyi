@@ -2,7 +2,7 @@ const neuronLookup = {};
 
 
 function sigmoid(x) {
-  return 1 / (1 + Math.exp(-(x)));
+  return x > 0 ? x : 0;
 }
 
 function getCenterCoordinates(div) {
@@ -174,7 +174,7 @@ class Neuron {
     this.input_container;
     this.id = `neuron-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     neuronLookup[this.id] = this;
-    this.bias = Math.floor(Math.random() * 20) - 10;
+    this.bias = Math.floor(Math.random() * 10) - 5;
     this.createUI();
     this.rerender = _.throttle(this.rerender, 200, {leading: true});
     this.drawConnections = _.throttle(this.drawConnections, 500, {leading: true})
@@ -224,7 +224,7 @@ class Neuron {
       .attr('max', 10)
       .attr('value', this.bias)
       .on('input', (event) => {
-        this.bias = +event.target.value;
+        this.bias = +event.target.value/2;
         this.update();
       });
 
@@ -410,7 +410,7 @@ window.onload = function() {
 
   const neurons = [];
 
-  for (let i=0; i<10; i++){
+  for (let i=0; i<4; i++){
     neurons.push(createNeuron());
   }
 

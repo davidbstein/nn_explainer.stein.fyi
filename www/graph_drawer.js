@@ -21,9 +21,9 @@ function _drawSigmoidGraph(svg, x) {
   const rightBound = viewBoxWidth * aspectRatio - margin.right;
 
 
-  const xDomain = [-10 * aspectRatio, 10 * aspectRatio];
+  const xDomain = [-5 * aspectRatio, 5 * aspectRatio];
   const xScale = d3.scaleLinear().domain(xDomain).range([margin.left, rightBound]);
-  const yScale = d3.scaleLinear().domain([-0.1, 1.1]).range([viewBoxHeight - margin.bottom, margin.top]);
+  const yScale = d3.scaleLinear().domain([-0.1, 5.5]).range([viewBoxHeight - margin.bottom, margin.top]);
 
   const lineGenerator = d3.line()
     .x((d) => xScale(d.x))
@@ -44,7 +44,7 @@ function _drawSigmoidGraph(svg, x) {
 
 
   // Draw axes
-  const yTickValues = d3.range(0, 1, 0.25);
+  const yTickValues = d3.range(0, 5, .5);
   const xAxis = d3.axisBottom(xScale).tickSize(2); // Set tick size to 0
   const yAxis = d3.axisLeft(yScale).tickValues(yTickValues).tickSize(2); // Set tick size to 0
 
@@ -84,7 +84,7 @@ function _drawSigmoidGraph(svg, x) {
     .attr('x1', xScale(x))
     .attr('y1', yScale(0))
     .attr('x2', xScale(x))
-    .attr('y2', yScale(1))
+    .attr('y2', yScale(5))
     .attr('stroke', 'blue')
     .attr('stroke-width', 2);
 
