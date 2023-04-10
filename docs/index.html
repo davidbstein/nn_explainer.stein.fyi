@@ -1,8 +1,29 @@
 <html>
-<link rel="stylesheet" type="text/css" href="chrome.css">
-<script src="d3.v7.min.js"></script>
-<script src="lodash.min.js"></script>
-<script type="text/javascript" src="graph_drawer.js"></script>
-<script type="text/javascript" src="main.js"></script>
-<div id="neuron-container">loading...</div>
+  <head>
+    <title> Neural Net Example </title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <!-- <script type="text/javascript" src="mnist_handwritten_train.js"></script> -->
+    <script type="text/javascript" src="mnist_handwritten_test.js"></script>
+    <script type="text/javascript" src="mnist_demo.js"></script>
+    <!--favicon as b64 image-->
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAAN" />  
+  </head>
+  <body>
+    <div id="network">
+      <div id="input-image"></div>
+      <div id="hidden-layers"></div>
+      <div id="output"></div>
+    </div> 
+    <div class="buttons">
+      <button id="train-1">Train (1)</button>
+      <button id="train-1000">Train (1000)</button>
+      <button id="train-100000">Train (100000)</button>
+    </div>
+    <div class="buttons">
+      <button id="update-weights">Update Weights (1) </button>
+      <button id="update-weights-1000">Update Weights (10000)</button>
+      <button id="load-random-image">Load Random Image</button>
+      <button id="clear-image">CLEAR</button>
+    </div>
+  </body>
 </html>
