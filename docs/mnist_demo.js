@@ -365,7 +365,7 @@ window.onload = async function () {
   let network = new Network(784, layers, 10);
 
   // data is in a json file at /mnist_handwritten_train.json, which is a list of objects of the form {image: [784 ints, between 0 and 255], label: [int, between 0 and 9]}
-  let data = MNIST_TRAIN;
+  let data = MNIST_TEST;
 
   function loadRandomImage() {
     let index = Math.floor(Math.random() * data.length);
