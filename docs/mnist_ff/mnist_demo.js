@@ -346,7 +346,7 @@ function estimateScores() {
     let {image, label} = getRandomImage();
     let outputs = window.network.forward(image);
     let prediction = outputs.indexOf(Math.max(...outputs));
-    if (outputs[prediction] > .5) {
+    if (outputs[prediction] > 0) {
       // "detection"
       if (prediction === label) {
         truePositives++;
