@@ -206,6 +206,7 @@ function saveCheckpoint(network) {
     layers: layers.slice(0, -1)
   };
   localStorage.setItem(`checkpoint-${checkpointID}`, JSON.stringify(checkpoint));
+  updateCheckpointList();
 }
 
 function listCheckpoints() {
@@ -219,12 +220,19 @@ function listCheckpoints() {
   return checkpoints;
 }
 
+function _formatCheckpoint(checkpoint) {
+  const date = new Date(checkpoint.id)
+  const localtime = date.toLocaleTimeString();
+  const localdate = date.toLocaleDateString();
+  return `${localdate} ${localtime} -- [${checkpoint.layout.slice(0,-1).join(",")}]`;
+}
+
 function updateCheckpointList(){
   const checkpointDiv = document.getElementById("checkpoints");
   for (let checkpoint of listCheckpoints()) {
     const button = document.createElement("button");
     // checkpoint.id is a timestamp, convert to isodate
-    button.innerHTML = `${new Date(checkpoint.id).toISOString().slice(0,10)} -- [${checkpoint.layout.slice(0,-1).join(",")}]`;
+    button.innerHTML = _formatCheckpoint(checkpoint);
     button.addEventListener("click", () => restoreCheckpoint(checkpoint.id));
     checkpointDiv.appendChild(button);
   }
@@ -264,16 +272,20 @@ function _serializeNetwork(network){
 
 function _loadWeightsFromSerialized(layers){
   let count = 0;
+  if (!layers) return;
   for (let i = 0; i < network.layers.length; i++) {
     if (layers.length <= i) continue;
     for (let j = 0; j < network.layers[i].neurons.length; j++) {
       if (layers[i].length <= j) continue;
-      count++
-      network.layers[i].neurons[j].weights = layers[i][j].weights;
+      count++;
+      const overlapSize = Math.max(layers[i][j].weights.length, network.layers[i].neurons[j].weights.length);
+      for (let k = 0; k < overlapSize; k++) {
+        network.layers[i].neurons[j].weights[k] = layers[i][j].weights[k] || network.layers[i].neurons[j].weights[k];
+      }
       network.layers[i].neurons[j].bias = layers[i][j].bias;
     }
+    console.log(`RESTORED ${count} neurons`);
   }
-  console.log(`RESTORED ${count} neurons`);
 }
 
 function storeNetworkInLocalStorage() {
@@ -287,33 +299,18 @@ function restoreNetworkWeightsFromLocalStorage(network) {
   _loadWeightsFromSerialized(layers);
 }
 
-function linearProjection(vector, projectionMatrix) {
-  if (vector.length === 2) 
-    return vector.map(normalizeOutputVal);
-  let result = [0, 0];
-  // linear projection
-  for (let i = 0; i < vector.length; i++) {
-    result[0] += vector[i] * projectionMatrix[i][0];
-    result[1] += vector[i] * projectionMatrix[i][1];
-  }
-  // Normalize
-  result[0] = Math.abs(result[0]) % 1;
-  result[1] = Math.abs(result[1]) % 1;
-  return result;
-}
-
 function secondsToString(secs) {
   secs = Math.floor(secs);
   let hours = Math.floor(secs / 3600);
   let minutes = Math.floor(secs / 60) % 60;
   let seconds = secs % 60;
-  const hstring = hours ? `${hours}h ` : "";
-  const mstring = minutes ? `${minutes}m ` : "";
-  const sstring = seconds ? `${seconds}s` : "0";
+  const hstring = hours ? `${hours.toString().padStart(2, "0")}h ` : "";
+  const mstring = minutes ? `${minutes.toString().padStart(2, "0")}m ` : "";
+  const sstring = seconds ? `${seconds.toString().padStart(2, "0")}s` : "00";
   return `${hstring}${mstring}${sstring}`;
 }
 
-async function updateProgressBar(num, denom, startTime){
+async function updateProgressBar(num, denom, startTime, scores){
   num = Math.round(num);
   denom = Math.round(denom);
   const progress = num / denom;
@@ -325,7 +322,10 @@ async function updateProgressBar(num, denom, startTime){
   //set width of progress bar
   progressBar.style.width = `${progress * 100}%`;
   //set text of progress bar
-  progressLabel.innerHTML = `${(progress*100).toFixed(1)}% (${num} / ${denom}) ETA: ${secondsToString(remaining/1000)}`;
+  let scoreStr = scores ? [
+    `accuracy: ${(scores.accuracy*100).toFixed(2)}%`,
+  ].join(", ") : "";
+  progressLabel.innerHTML = `${(progress*100).toFixed(1)}% (${num} / ${denom}) ETA: ${secondsToString(remaining/1000)}  (${scoreStr}))`;
   //clear progress bar
   progressContainer.style.display = "block";
 }
@@ -335,18 +335,56 @@ function clearProgressBar(){
   progressContainer.style.display = "none";
 }
 
+// computer accuracy, recall, and f1 score
+function estimateScores() {
+  const sampleSize = 1000;
+  let truePositives = 0;
+  let falsePositives = 0;
+  let falseNegatives = 0;
+  let trueNegatives = 0;
+  for (let i = 0; i < sampleSize; i++) {
+    let {image, label} = getRandomImage();
+    let outputs = window.network.forward(image);
+    let prediction = outputs.indexOf(Math.max(...outputs));
+    if (outputs[prediction] > .5) {
+      // "detection"
+      if (prediction === label) {
+        truePositives++;
+      } else {
+        falsePositives++;
+      }
+    } else {
+      falseNegatives++;
+    }
+  }
+  return ({accuracy: (truePositives) / sampleSize})
+}
+
 async function trainBatched(n, batchSize=100, imageGetter, render_update_callback, update_step=10) {
   console.log(`training for ${n} iterations with batch size ${batchSize}...`)
+
+  document.getElementById("pause-training").hidden = false;
+  document.getElementById("pause-training").disabled = false;
+  let scores = estimateScores();
   const startTime = Date.now();
   for (let i = 0; i < n; i++) {
-    await updateProgressBar(i*batchSize, n*batchSize, startTime);
+    if (Math.floor(startTime - Date.now()/1000) % 10 === 0) {
+      scores = estimateScores();
+    }
+    await updateProgressBar(i*batchSize, n*batchSize, startTime, scores);
     if (i % update_step == 0 && render_update_callback) {
       render_update_callback();
     }
     await doBatch(batchSize, imageGetter);
     await delay(0);
+    if (window.STOP_SIGNAL) {
+      delete window.STOP_SIGNAL;
+      break;
+    }
   }
   clearProgressBar();
+
+  document.getElementById("pause-training").hidden = true;
 }
 
 // Promisify setTimeout to work with async/await
@@ -377,6 +415,7 @@ window.onload = async function () {
     }
     return data[index];
   }
+  window.getRandomImage = getRandomImage;
 
   function loadRandomImage() {
     const imageData = getRandomImage();
@@ -419,19 +458,23 @@ window.onload = async function () {
     redraw();
   }
 
-  function train(n, batch_size=30) {
-    // console.log(`training for ${n} iterations...`)
-    // for (q of document.querySelectorAll("button")) {
-    //   q.disabled = true;
-    // }
-    // for (let i = 0; i < n; i++) {
-    //   const imageData = getRandomImage();
-    //   let input = imageData.image.map(x => x / 255);
-    //   let label = imageData.label;
-    //   let learningRate = window.LEARNING_RATE;
-    //   network.backward(input, label, learningRate);
-    // }
-    trainBatched(n/batch_size, batch_size, getRandomImage, loadRandomImage);
+  async function train(n, batch_size=30) {
+    for (q of document.getElementById("config-container").querySelectorAll("button")) {
+      q.disabled = true;
+    }
+    if (batch_size===1){
+      console.log(`training for ${n} iterations...`)
+      for (let i = 0; i < n; i++) {
+        const imageData = getRandomImage();
+        let input = imageData.image.map(x => x / 255);
+        let label = imageData.label;
+        let learningRate = window.LEARNING_RATE;
+        network.backward(input, label, learningRate);
+      }
+      return;
+    }
+
+    await trainBatched(n/batch_size, batch_size, getRandomImage, loadRandomImage);
     loadRandomImage();
     redraw();
 
@@ -486,6 +529,7 @@ window.onload = async function () {
   /**
    * SETUP BUTTONS
    */
+  document.getElementById("pause-training").addEventListener("click", () => window.STOP_SIGNAL = true);
   document.getElementById("load-random-image").addEventListener("click", loadRandomImage);
   document.getElementById("clear-image").addEventListener("click", clearImage);
   document.getElementById("reset-weights").addEventListener("click", resetWeights);
@@ -494,7 +538,7 @@ window.onload = async function () {
   document.getElementById("train-1").addEventListener("click", () => train(1));
   document.getElementById("train-1000").addEventListener("click", () => train(10000));
   document.getElementById("train-100k").addEventListener("click", () => train(100000));
-  document.getElementById("train-1m").addEventListener("click", () => train(1000000));
+  document.getElementById("train-1m").addEventListener("click", () => train(100000000));
   document.getElementById("draw-erase-toggle").addEventListener("click", toggleDrawErase);
   document.querySelectorAll("input[name=digit]").forEach((elem) => {
     elem.addEventListener("change", updateCurrentDigits);
@@ -529,29 +573,62 @@ window.onload = async function () {
     return layer;
   }
 
-  const space_viz = new SpaceViz(document.getElementById("space-viz"));
-  window.space_viz = space_viz;
-  function addSVDigit(should_redraw, image, label){
+  function setSV(dims){
+    if (window.space_viz) {
+      delete window.space_viz; //TODO: almost cert
+      document.getElementById("space-viz").innerHTML = "";
+    }
+    const space_viz = new SpaceViz(document.getElementById("space-viz"), dims);
+    window.space_viz = space_viz;
+    return space_viz;
+  }
+  setSV(3);
+  async function addSVDigit(should_redraw, image, label){
     if (image === undefined || label === undefined) {
       const imageData = getRandomImage();
       image = imageData.image;
       label = imageData.label;
     }
     const vec = imageToVec(image, label);
-    window.space_viz.addDigit(image, label, vec);
+    await window.space_viz.addDigit(image, label, vec);
     if (should_redraw != false) window.space_viz.draw();
   }
   function retrainSVProjections(){
     window.space_viz.resetProjection();
     window.space_viz.draw();
   }
+
+  const SAMPLE_RATE = 500;
+  const SAMPLE_N = 10;
+  async function resampleSV(){
+    window._CONTINUE_RESAMPLE = !window._CONTINUE_RESAMPLE;
+    setTimeout(continueResampleSV, SAMPLE_RATE);
+  }
+  async function continueResampleSV(){
+    for (let i = 0; i < SAMPLE_N; i++) {
+      window.space_viz.images.shift()
+      await addSVDigit(false);
+    }
+    window.space_viz.draw();
+    if (window._CONTINUE_RESAMPLE) {
+      setTimeout(continueResampleSV, SAMPLE_RATE);
+    }
+  }
   document.getElementById("SV-add-current").addEventListener("click", () => {
     addSVDigit(false, window.currentInput, window.currentLabel);
   });
   document.getElementById("SV-add-random").addEventListener("click", addSVDigit);
   document.getElementById("SV-add-100").addEventListener("click", 
-    () => {for (let i = 0; i < 100; i++) addSVDigit(false);window.space_viz.draw();}
+    () => {for (let i = 0; i < 100; i++) addSVDigit(false); window.space_viz.draw();}
   );
-  document.getElementById("SV-reset").addEventListener("click", () => {window.space_viz.reset();});
+  document.getElementById("SV-resample").addEventListener("click", resampleSV);
+  document.getElementById("SV-reset").addEventListener("click", () => {
+    window._CONTINUE_RESAMPLE = false;
+    window.space_viz.reset();
+  });
   document.getElementById("SV-retrain").addEventListener("click", retrainSVProjections);
+  document.getElementById("SV-dim-toggle").addEventListener("click", (e) => {
+    setSV(window.space_viz.dims === 2 ? 3 : 2);
+    e.target.innerHTML = window.space_viz.dims === 2 ? "2D" : "3D";
+  });
 }

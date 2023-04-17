@@ -12,6 +12,7 @@ body {
   align-items: center;
   height: 75vh;
   height: 75dvh;
+  max-height: 800px;
   overflow: hidden;
 }
 
@@ -92,6 +93,13 @@ body {
   max-height: 3em;
   background: #888;
   image-rendering: pixelated;
+}
+
+.neuron-output {
+  width: 1em;
+  font-family: monospace;
+  font-size: small;
+  color: #aaa;
 }
 
 #output {
@@ -224,6 +232,10 @@ input.changed {
 
 #space-viz-container {
   margin-top: 2em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 #space-viz {
   display: flex;

@@ -3,6 +3,8 @@
   <head>
     <title> Neural Net Example </title>
     <script src="https://scienceai.github.io/tsne-js/tsne.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
     <link rel="stylesheet" type="text/css" href="/mnist_ff/style.css">
     <!-- <script type="text/javascript" src="mnist_handwritten_train.js"></script> -->
     <script type="text/javascript" src="/mnist_ff/mnist_handwritten_test.js"></script>
@@ -59,8 +61,9 @@
           <button id="train-1">Train (1)</button>
           <button id="train-1000">Train (1000)</button>
           <button id="train-100k">Train (100k)</button>
-          <button id="train-1m">Train (1M)</button>
+          <button id="train-1m">Train (100M)</button>
           <button id="reset-weights">RESET</button>
+          <button id="pause-training">PAUSE</button>
         </div>
         <div class="buttons">
           <div class="button-label"> train on a single image </div>
@@ -84,8 +87,10 @@
         <button id="SV-add-current"> add current </button>
         <button id="SV-add-random"> add random </button>
         <button id="SV-add-100"> add 100 </button>
+        <button id="SV-resample"> resample </button>
         <button id="SV-reset"> reset </button>
-        <button id="SV-retrain"> retrain projection </button>
+        <button id="SV-retrain"> retrain </button>
+        <button id="SV-dim-toggle"> 2D </button>
       </div>
     </div>
     <div id="checkpoints">

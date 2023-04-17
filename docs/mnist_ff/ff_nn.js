@@ -220,7 +220,7 @@ class Network {
   }
 
   changeLayersButRetainWeights(newHiddenLayerSizes) {
-    console.log(newHiddenLayerSizes)
+    console.log(newHiddenLayerSizes);
     let oldLayers = this.layers;
     this.layers = [];
     let prevLayerSize = oldLayers[0].neurons[0].weights.length;
@@ -230,18 +230,33 @@ class Network {
       prevLayerSize = newHiddenLayerSizes[i];
     }
     this.layers.push(new Layer(10, prevLayerSize));
+  
     for (let i = 0; i < this.layers.length; i++) {
       for (let j = 0; j < this.layers[i].neurons.length; j++) {
         if (oldLayers.length > i && oldLayers[i].neurons.length > j) {
-          this.layers[i].neurons[j].weights = oldLayers[i].neurons[j].weights;
+          this.layers[i].neurons[j].weights = oldLayers[i].neurons[j].weights.slice();
           this.layers[i].neurons[j].bias = oldLayers[i].neurons[j].bias;
+  
+          if (this.layers[i].neurons[j].weights.length < oldLayers[i].neurons[j].weights.length) {
+            let additionalWeights = Array(
+              oldLayers[i].neurons[j].weights.length - this.layers[i].neurons[j].weights.length
+            )
+            .fill(0)
+            .map(() => (Math.random() * 2 - 1) / 2);
+            this.layers[i].neurons[j].weights = this.layers[i].neurons[j].weights.concat(additionalWeights);
+          }
+        } else {
+          for (let k = 0; k < this.layers[i].neurons[j].weights.length; k++) {
+            this.layers[i].neurons[j].weights[k] = (Math.random() * 2 - 1) / 2;
+          }
+          this.layers[i].neurons[j].bias = 0;
         }
       }
     }
   }
 }
 
-function dynamicLearningRate(loss, maxRate=10, decayRate=1){
+function dynamicLearningRate(loss, maxRate=.1, decayRate=1){
   // //exponential decay
   // const a = maxRate;
   // const b = decayRate;
@@ -274,6 +289,8 @@ async function doBatch(batchSize, imageGetter) {
       const output = outputs[outputs.length - 1][k];
       const target = k === label ? 1 : 0;
       outputGradients.push((output - target) * (output > 0 ? 1 : 0));
+      // const target = k === label ? 1 : -1;
+      // outputGradients.push(Math.abs(output - target));
     }
     const loss = outputGradients.reduce((sum, gradient) => sum + gradient ** 2, 0) / 2;
     averageLoss = (loss / ++count) + (averageLoss * (count - 1) / count);
@@ -284,9 +301,9 @@ async function doBatch(batchSize, imageGetter) {
     }
   }
   // Update weights and biases based on accumulated gradients
-  learningRate = dynamicLearningRate(averageLoss, Math.log10(batchSize), .01);
+  learningRate = dynamicLearningRate(averageLoss, Math.log10(batchSize));
   const lossTextBar = `*`.repeat(Math.round(averageLoss*100));
-  console.log(`loss: ${averageLoss.toFixed(3)}`, `learning rate: ${learningRate.toFixed(3)}`, lossTextBar);
+  console.info(`loss: ${averageLoss.toFixed(3)}`, `learning rate: ${learningRate.toFixed(3)}`, lossTextBar);
   network.layers.forEach(layer => {
     layer.neurons.forEach(neuron => {
       neuron.weights = neuron.weights.map((weight, index) => weight - learningRate * neuron.weightGradientsSum[index] / batchSize);
