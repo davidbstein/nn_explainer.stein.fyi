@@ -1,0 +1,80 @@
+<html>
+  <head>
+    <title> Neural Net Example </title>
+    <link rel="stylesheet" type="text/css" href="/mnist_ff/style.css">
+    <!-- <script type="text/javascript" src="mnist_handwritten_train.js"></script> -->
+    <script type="text/javascript" src="/mnist_ff/mnist_handwritten_test.js"></script>
+    <script type="text/javascript" src="/mnist_ff/ff_nn.js"></script>
+    <script type="text/javascript" src="/mnist_ff/spaceviz.js"></script>
+    <script type="text/javascript" src="/mnist_ff/mnist_demo.js"></script>
+    <!--favicon as b64 image-->
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAAN" />  
+  </head>
+  <body>
+    <div id="network">
+      <div id="input-container">
+        <div id="input-label"></div>
+        <div id="input-image"></div>
+        <div id="edit-buttons" class="buttons">
+          <button id="draw-erase-toggle">draw mode</button>
+        </div>
+      </div>
+      <div id="hidden-layers"></div>
+      <div id="output"></div>
+    </div> 
+    <div id="config-container">
+      <div id="training-digits" class="buttons">
+        <div class="button-label"> available digits: </div>
+        <input class="digit-checkbox" type="checkbox" id="digit0" name="digit" value="0" checked="true">
+        <label class="digit-label" for="digit0">0</label>
+        <input class="digit-checkbox" type="checkbox" id="digit1" name="digit" value="1" checked="true">
+        <label class="digit-label" for="digit1">1</label>
+        <input class="digit-checkbox" type="checkbox" id="digit2" name="digit" value="2" checked="true">
+        <label class="digit-label" for="digit2">2</label>
+        <input class="digit-checkbox" type="checkbox" id="digit3" name="digit" value="3" checked="true">
+        <label class="digit-label" for="digit3">3</label>
+        <input class="digit-checkbox" type="checkbox" id="digit4" name="digit" value="4" checked="true">
+        <label class="digit-label" for="digit4">4</label>
+        <input class="digit-checkbox" type="checkbox" id="digit5" name="digit" value="5" checked="true">
+        <label class="digit-label" for="digit5">5</label>
+        <input class="digit-checkbox" type="checkbox" id="digit6" name="digit" value="6" checked="true">
+        <label class="digit-label" for="digit6">6</label>
+        <input class="digit-checkbox" type="checkbox" id="digit7" name="digit" value="7" checked="true">
+        <label class="digit-label" for="digit7">7</label>
+        <input class="digit-checkbox" type="checkbox" id="digit8" name="digit" value="8" checked="true">
+        <label class="digit-label" for="digit8">8</label>
+        <input class="digit-checkbox" type="checkbox" id="digit9" name="digit" value="9" checked="true">
+        <label class="digit-label" for="digit9">9</label>
+      </div>
+      <div class="buttons">
+        <div class="button-label"> train on multiple images </div>
+        <button id="train-1">Train (1)</button>
+        <button id="train-1000">Train (1000)</button>
+        <button id="train-100000">Train (100000)</button>
+        <button id="reset-weights">RESET</button>
+      </div>
+      <div class="buttons">
+        <div class="button-label"> train on a single image </div>
+        <button id="update-weights">Update Weights (1) </button>
+        <button id="update-weights-1000">Update Weights (10000)</button>
+        <button id="load-random-image">Load Random Image</button>
+        <button id="clear-image">CLEAR</button>
+      </div>
+      <div class="buttons">
+        <div class="button-label"> adjust network layout </div>
+        <input id="layers-input" type="text"/>
+        <button id="set-layers" disabled="true">UPDATE</button>
+      </div>
+    </div>
+    <div id="space-viz-container">
+      <div id="space-viz"></div>
+      <div class="buttons">
+        <button id="SV-add-current"> add current </button>
+        <button id="SV-add-random"> add random </button>
+        <button id="SV-add-100"> add 100 </button>
+        <button id="SV-reset"> reset </button>
+        <button id="SV-rotate"> rotate projection </button>
+      </div>
+    </div>
+  </body>
+</html>

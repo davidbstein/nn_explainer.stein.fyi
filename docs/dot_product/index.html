@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <script src="main.js"></script>
+  <style>
+    body {
+      background-color: #000000;
+      font-family: sans-serif;
+    }
+    #container {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      gap: 1em;
+      margin: 1em;
+    }
+    #target {
+      width: 600px;
+      height: 600px;
+      box-shadow: 0 0 1em white;
+      padding: 1em;
+    }
+    #numbers {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      font-size: 2em;
+      gap: 1em;
+      height: 100%;
+      width: 10em;
+    }
+    .vec-coords {
+      font-size: 1.5em;
+    }
+    #dot-product {
+      color: red;
+    }
+    #orange-vec-coords {
+      color: orange;
+    }
+    #blue-vec-coords {
+      color: blue;
+    }
+    #numbers span {
+      font-family: monospace;
+    }
+    </style>
+</head>
+<body>
+  <div id="container">
+    <div id="target"></div>
+    <div id="numbers">
+      <div id="orange-vec-coords" class="vec-coords">(<span id='orange-x-val'></span>, <span id='orange-y-val'></span>)</div>
+      <div id="blue-vec-coords" class="vec-coords">(<span id='blue-x-val'></span>, <span id='blue-y-val'></span>)</div>
+      <div id="dot-product">Score: <span id='dp-val'></span></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,29 +1,75 @@
-<html>
-  <head>
-    <title> Neural Net Example </title>
-    <link rel="stylesheet" type="text/css" href="/mnist_ff/style.css">
-    <!-- <script type="text/javascript" src="mnist_handwritten_train.js"></script> -->
-    <script type="text/javascript" src="/mnist_ff/mnist_handwritten_test.js"></script>
-    <script type="text/javascript" src="/mnist_ff/mnist_demo.js"></script>
-    <!--favicon as b64 image-->
-    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAAN" />  
-  </head>
+<head>
+  <title> ML Demos and Explainers </title>
+  <style>
+    body {
+      background-color: #000000;
+      font-family: sans-serif;
+      color: white;
+    }
+    #container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 1em;
+      margin: 1em;
+    }
+    #links {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1em;
+      height: 100%;
+    }
+    .option {
+      font-size: 1.5em;
+    }
+    #links span {
+      font-family: monospace;
+    }
+    #links {
+      display: flex;
+      flex-direction: row;
+      gap: 1em;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .option {
+      font-size: 1.5em;
+      border: .1em solid aqua;
+      border-radius: .5em;
+      background: black;
+      color: cyan;
+      text-decoration: none;
+      padding: .5em;
+      margin: .5em;
+    }
+
+    .option a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .option:hover {
+      background: cyan;
+      color: black;
+    }
+
+    .option:active {
+      background: #088;
+      color: white;
+    }
+  </style>
+</head>
   <body>
-    <div id="network">
-      <div id="input-image"></div>
-      <div id="hidden-layers"></div>
-      <div id="output"></div>
-    </div> 
-    <div class="buttons">
-      <button id="train-1">Train (1)</button>
-      <button id="train-1000">Train (1000)</button>
-      <button id="train-100000">Train (100000)</button>
-    </div>
-    <div class="buttons">
-      <button id="update-weights">Update Weights (1) </button>
-      <button id="update-weights-1000">Update Weights (10000)</button>
-      <button id="load-random-image">Load Random Image</button>
-      <button id="clear-image">CLEAR</button>
-    </div>
-  </body>
-</html>
+    <div id="container">
+      <div>
+        <h1> ML Demos and Explainers </h1>
+      </div>  
+      <div id="links">
+        <div class="option"><a href="/mnist_ff/index.html">feed-forward neural network</a></div>
+        <div class="option"><a href="/dot_product/index.html">dot products</a></div>
+      </div>
+  </div>
+</body>

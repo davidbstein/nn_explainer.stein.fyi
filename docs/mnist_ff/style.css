@@ -10,6 +10,12 @@ body {
   flex-direction: row;
   justify-content: space-evenly;
   align-items: center;
+  height: 75vh;
+  height: 75dvh;
+  overflow: hidden;
+}
+
+#network > div {
 }
 
 #input-image .input-row {
@@ -25,8 +31,21 @@ body {
   margin: .1em;
 }
 
+#input-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  gap: 1em;
+  height: 100%;
+}
+
+#input-label {
+  font-size: 2em;
+  font-family: monospace;
+}
+
 #hidden-layers {
-  border: 1px solid #ccc;
   display: flex;
   flex-direction: row;
   row-gap: .5em;
@@ -53,8 +72,8 @@ body {
 }
 
 .neuron-weight canvas {
-  width: 3em;
-  height: 3em;
+  max-width: 3em;
+  max-height: 3em;
   background: #888;
   image-rendering: pixelated;
 }
@@ -106,7 +125,7 @@ body {
   align-items: center;
 }
 
-button {
+button, input, label {
   font-size: 1.5em;
   border: .1em solid aqua;
   border-radius: .5em;
@@ -114,6 +133,23 @@ button {
   color: cyan;
   padding: .5em;
   margin: .5em;
+}
+.digit-checkbox {
+  display: none;
+}
+
+.digit-label {
+  height: 1em;
+  width: 1em;
+  font-size: 1.5em;
+  text-align: center;
+  font-family: monospace;
+  cursor: pointer;
+}
+
+.digit-checkbox:checked + .digit-label {
+  color: black;
+  background-color: cyan;
 }
 
 button:hover {
@@ -124,4 +160,61 @@ button:hover {
 button:active {
   background: #088;
   color: white;
+}
+
+.digit-label:hover {
+  background: #088;
+  color: cyan;
+}
+.digit-checkbox:checked + .digit-label:hover {
+  background: #0cc;
+  color: black;
+}
+
+button:disabled, input {
+  border-color: #ccc;
+  background: #333;
+  color: #ccc;
+}
+
+/* suppress highlighting of labels */
+label {
+  user-select: none;
+}
+
+input {
+  border-radius: 0;
+  padding: .5em;
+  margin: .5em;
+  text-align: center;
+}
+
+input.changed {
+  color: white;
+  border-color: cyan;
+}
+
+.button-label {
+  font-size: 1.5em;
+  font-family: sans-serif;
+  width: 7em;
+  text-align: right;
+  color: gray;
+}
+
+#training-digits {
+  gap: .2em;
+}
+
+#space-viz-container {
+  margin-top: 2em;
+}
+#space-viz {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#space-viz canvas {
+  border: 1px solid white;
 }
