@@ -543,6 +543,18 @@ window.onload = async function () {
   document.querySelectorAll("input[name=digit]").forEach((elem) => {
     elem.addEventListener("change", updateCurrentDigits);
   });
+  document.getElementById("deselect-all-digits").addEventListener("click", () => {
+    for (let elem of document.querySelectorAll("input[name=digit]")) {
+      elem.checked = false;
+    }
+    updateCurrentDigits();
+  });
+  document.getElementById("select-all-digits").addEventListener("click", () => {
+    for (let elem of document.querySelectorAll("input[name=digit]")) {
+      elem.checked = true;
+    }
+    updateCurrentDigits();
+  });
 
   document.getElementById("layers-input").placeholder = `comma-seporated layers (e.g., ${layers.join(",")})`;
   document.getElementById("layers-input").value = `${layers.join(",")}`;
@@ -614,6 +626,11 @@ window.onload = async function () {
       setTimeout(continueResampleSV, SAMPLE_RATE);
     }
   }
+  async function dimToggleSV(){
+    setSV(window.space_viz.dims === 2 ? 3 : 2);
+    window.space_viz.draw();
+    document.getElementById("SV-dim-toggle").innerHTML = window.space_viz.dims === 2 ? "2D" : "3D";
+  }
   document.getElementById("SV-add-current").addEventListener("click", () => {
     addSVDigit(false, window.currentInput, window.currentLabel);
   });
@@ -627,8 +644,6 @@ window.onload = async function () {
     window.space_viz.reset();
   });
   document.getElementById("SV-retrain").addEventListener("click", retrainSVProjections);
-  document.getElementById("SV-dim-toggle").addEventListener("click", (e) => {
-    setSV(window.space_viz.dims === 2 ? 3 : 2);
-    e.target.innerHTML = window.space_viz.dims === 2 ? "2D" : "3D";
-  });
+  document.getElementById("SV-dim-toggle").innerHTML = window.space_viz.dims === 2 ? "2D" : "3D";
+  document.getElementById("SV-dim-toggle").addEventListener("click", dimToggleSV);
 }

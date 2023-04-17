@@ -154,7 +154,7 @@ class SpaceViz {
     if (!this.tsne || this.countdown_to_rebalance-- <= 0) {
       await this.resetProjection();
     }
-    const scale = 2 / Math.min((Math.max(1, Math.log10(this.images.length)-1)),2);
+    const scale = 2 / Math.min((Math.max(1, Math.log10(this.images.length)-1)),4);
     console.log(scale);
     for (let image of this.images) {
       if (!image.projectedVector) {
@@ -174,7 +174,7 @@ class SpaceViz {
     for (let i = 0; i < 28; i++) {
       for (let j = 0; j < 28; j++) {
         const pixelValue = image[i * 28 + j];  
-        this.ctx.fillStyle = `rgb(${r * 255}, ${g * 255}, ${b * 255}, ${pixelValue/2})`;
+        this.ctx.fillStyle = `rgb(${r * 255}, ${g * 255}, ${b * 255}, ${pixelValue/4})`;
         if (pixelValue > 0) {
           const pixelX = xPos + j * scale;
           const pixelY = yPos + i * scale;
