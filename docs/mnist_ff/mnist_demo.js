@@ -1,3 +1,4 @@
+
 function drawNeuronWeights(target, weights, width, height) {
   let canvas = document.createElement("canvas");
   canvas.width = width;
@@ -87,7 +88,7 @@ function drawOutput(outputs) {
   target = document.getElementById("output");
   for (let i = 0; i < 10; i++) {
     let div = document.createElement("div");
-    let val = normalizeOutputVal(outputs[i]);
+    let val = Math.max(outputs[i], 0);
     let outputColor = Math.min(val, 1);
     outputColor = 1 - (1-outputColor) * (1-outputColor);
     outputColor *= 255;
@@ -130,9 +131,8 @@ function getAdjacentPixels(idx){
 
 /**
  * detect mouseover events on the input image, and update the input image to reflect the mouse position if the mouse is down
- * @param {*} redraw callback to re-render the input image
  */
-function instrumentInputImage(redraw){
+function instrumentInputImage(){
   for (let elem of document.querySelectorAll(".input-pixel")) {
     elem.addEventListener("mouseover", (e) => {
       const mouseDown = window.mouseDown;
@@ -195,7 +195,59 @@ function drawNetwork(network, inputs) {
 }
 
 
-function storeNetworkInLocalStorage(network) {
+function saveCheckpoint(network) {
+  console.log("saved!");
+  const layers = _serializeNetwork(network);
+  const checkpointID = Date.now();
+  const layout = network.layers.map(layer => layer.neurons.length);
+  const checkpoint = {
+    id: checkpointID,
+    layout: layout,
+    layers: layers.slice(0, -1)
+  };
+  localStorage.setItem(`checkpoint-${checkpointID}`, JSON.stringify(checkpoint));
+}
+
+function listCheckpoints() {
+  let checkpoints = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    let key = localStorage.key(i);
+    if (key.startsWith("checkpoint-")) {
+      checkpoints.push(JSON.parse(localStorage.getItem(key)));
+    }
+  }
+  return checkpoints;
+}
+
+function updateCheckpointList(){
+  const checkpointDiv = document.getElementById("checkpoints");
+  for (let checkpoint of listCheckpoints()) {
+    const button = document.createElement("button");
+    // checkpoint.id is a timestamp, convert to isodate
+    button.innerHTML = `${new Date(checkpoint.id).toISOString().slice(0,10)} -- [${checkpoint.layout.slice(0,-1).join(",")}]`;
+    button.addEventListener("click", () => restoreCheckpoint(checkpoint.id));
+    checkpointDiv.appendChild(button);
+  }
+}
+
+function restoreCheckpoint(checkpointID) {
+  const network = window.network;
+  let checkpoint = JSON.parse(localStorage.getItem(`checkpoint-${checkpointID}`));
+  if (!checkpoint) {
+    console.log(`checkpoint ${checkpointID} not found`);
+    return;
+  }
+  console.log("restoring", checkpoint);
+  const layout = checkpoint.layout.slice(0,-1);
+  document.getElementById("layers-input").value = layout.join(",");
+  window.history.pushState({}, "", `?${layout.join(",")}`);
+  network.changeLayersButRetainWeights(layout);
+  _loadWeightsFromSerialized(checkpoint.layers);
+  console.log(`RESTORED checkpoint ${checkpointID}`);
+  redraw();
+}
+
+function _serializeNetwork(network){
   let layers = [];
   for (let i = 0; i < network.layers.length; i++) {
     let layer = [];
@@ -207,12 +259,10 @@ function storeNetworkInLocalStorage(network) {
     }
     layers.push(layer);
   }
-  localStorage.setItem("network", JSON.stringify(layers));
-  console.log("STORED");
+  return layers
 }
 
-function restoreNetworkWeightsFromLocalStorage(network) {
-  let layers = JSON.parse(localStorage.getItem("network"));
+function _loadWeightsFromSerialized(layers){
   let count = 0;
   for (let i = 0; i < network.layers.length; i++) {
     if (layers.length <= i) continue;
@@ -224,6 +274,17 @@ function restoreNetworkWeightsFromLocalStorage(network) {
     }
   }
   console.log(`RESTORED ${count} neurons`);
+}
+
+function storeNetworkInLocalStorage() {
+  const network = window.network;
+  localStorage.setItem("network", JSON.stringify(_serializeNetwork(network)));
+  console.log("STORED");
+}
+
+function restoreNetworkWeightsFromLocalStorage(network) {
+  let layers = JSON.parse(localStorage.getItem("network"));
+  _loadWeightsFromSerialized(layers);
 }
 
 function linearProjection(vector, projectionMatrix) {
@@ -238,7 +299,59 @@ function linearProjection(vector, projectionMatrix) {
   // Normalize
   result[0] = Math.abs(result[0]) % 1;
   result[1] = Math.abs(result[1]) % 1;
-  return result.map(normalizeOutputVal);
+  return result;
+}
+
+function secondsToString(secs) {
+  secs = Math.floor(secs);
+  let hours = Math.floor(secs / 3600);
+  let minutes = Math.floor(secs / 60) % 60;
+  let seconds = secs % 60;
+  const hstring = hours ? `${hours}h ` : "";
+  const mstring = minutes ? `${minutes}m ` : "";
+  const sstring = seconds ? `${seconds}s` : "0";
+  return `${hstring}${mstring}${sstring}`;
+}
+
+async function updateProgressBar(num, denom, startTime){
+  num = Math.round(num);
+  denom = Math.round(denom);
+  const progress = num / denom;
+  const elapsed = Date.now() - startTime;
+  const remaining = elapsed / progress - elapsed;
+  const progressContainer = document.getElementById("progress-container");
+  const progressBar = document.getElementById("progress-bar");
+  const progressLabel = document.getElementById("progress-label");
+  //set width of progress bar
+  progressBar.style.width = `${progress * 100}%`;
+  //set text of progress bar
+  progressLabel.innerHTML = `${(progress*100).toFixed(1)}% (${num} / ${denom}) ETA: ${secondsToString(remaining/1000)}`;
+  //clear progress bar
+  progressContainer.style.display = "block";
+}
+
+function clearProgressBar(){
+  const progressContainer = document.getElementById("progress-container");
+  progressContainer.style.display = "none";
+}
+
+async function trainBatched(n, batchSize=100, imageGetter, render_update_callback, update_step=10) {
+  console.log(`training for ${n} iterations with batch size ${batchSize}...`)
+  const startTime = Date.now();
+  for (let i = 0; i < n; i++) {
+    await updateProgressBar(i*batchSize, n*batchSize, startTime);
+    if (i % update_step == 0 && render_update_callback) {
+      render_update_callback();
+    }
+    await doBatch(batchSize, imageGetter);
+    await delay(0);
+  }
+  clearProgressBar();
+}
+
+// Promisify setTimeout to work with async/await
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 
@@ -265,8 +378,6 @@ window.onload = async function () {
     return data[index];
   }
 
-
-
   function loadRandomImage() {
     const imageData = getRandomImage();
     window.currentInput = imageData.image.map(x => x / 255);
@@ -284,6 +395,7 @@ window.onload = async function () {
     drawNetwork(network, currentInput);
     instrumentInputImage(redraw);
   }
+  window.redraw = redraw;
 
   function updateWeights(n) {
     for (let i = 0; i < n; i++) {
@@ -307,18 +419,19 @@ window.onload = async function () {
     redraw();
   }
 
-  function train(n) {
-    console.log(`training for ${n} iterations...`)
-    for (q of document.querySelectorAll("button")) {
-      q.disabled = true;
-    }
-    for (let i = 0; i < n; i++) {
-      const imageData = getRandomImage();
-      let input = imageData.image.map(x => x / 255);
-      let label = imageData.label;
-      let learningRate = window.LEARNING_RATE;
-      network.backward(input, label, learningRate);
-    }
+  function train(n, batch_size=30) {
+    // console.log(`training for ${n} iterations...`)
+    // for (q of document.querySelectorAll("button")) {
+    //   q.disabled = true;
+    // }
+    // for (let i = 0; i < n; i++) {
+    //   const imageData = getRandomImage();
+    //   let input = imageData.image.map(x => x / 255);
+    //   let label = imageData.label;
+    //   let learningRate = window.LEARNING_RATE;
+    //   network.backward(input, label, learningRate);
+    // }
+    trainBatched(n/batch_size, batch_size, getRandomImage, loadRandomImage);
     loadRandomImage();
     redraw();
 
@@ -357,7 +470,7 @@ window.onload = async function () {
   window.drawMode = true;
   document.body.addEventListener("mousedown", () => window.mouseDown = true);
   document.body.addEventListener("mouseup", () => window.mouseDown = false);
-  window.LEARNING_RATE = .1;
+  window.LEARNING_RATE = 1;
 
   let layers = [8, 8];
   if (window.location.search) {
@@ -373,15 +486,15 @@ window.onload = async function () {
   /**
    * SETUP BUTTONS
    */
-
   document.getElementById("load-random-image").addEventListener("click", loadRandomImage);
   document.getElementById("clear-image").addEventListener("click", clearImage);
   document.getElementById("reset-weights").addEventListener("click", resetWeights);
   document.getElementById("update-weights").addEventListener("click", () => updateWeights(1));
   document.getElementById("update-weights-1000").addEventListener("click", () => updateWeights(10000));
   document.getElementById("train-1").addEventListener("click", () => train(1));
-  document.getElementById("train-1000").addEventListener("click", () => train(1000));
-  document.getElementById("train-100000").addEventListener("click", () => train(10000));
+  document.getElementById("train-1000").addEventListener("click", () => train(10000));
+  document.getElementById("train-100k").addEventListener("click", () => train(100000));
+  document.getElementById("train-1m").addEventListener("click", () => train(1000000));
   document.getElementById("draw-erase-toggle").addEventListener("click", toggleDrawErase);
   document.querySelectorAll("input[name=digit]").forEach((elem) => {
     elem.addEventListener("change", updateCurrentDigits);
@@ -396,25 +509,29 @@ window.onload = async function () {
     }
   }
   document.getElementById("set-layers").addEventListener("click", loadNewLayers);
+  document.getElementById("save-checkpoint").addEventListener("click", () => saveCheckpoint(network));
+  updateCheckpointList();
 
+  
+  /**
+   * SPACE VIZ
+   */
+  
   function imageToVec(input, label){
     const outputs = network.computeInternals(input);
     let layer = null;
     for (let i = 0; i < outputs.length; i++) {
       let currentLayer = outputs[i];
-      if (layer === null || currentLayer.length < layer.length) {
+      if (layer === null || currentLayer.length <= layer.length) {
         layer = currentLayer;
       }
     }
     return layer;
   }
 
-  /**
-   * SPACE VIZ
-   */
   const space_viz = new SpaceViz(document.getElementById("space-viz"));
   window.space_viz = space_viz;
-  function addSVDigit(redraw, image, label){
+  function addSVDigit(should_redraw, image, label){
     if (image === undefined || label === undefined) {
       const imageData = getRandomImage();
       image = imageData.image;
@@ -422,10 +539,10 @@ window.onload = async function () {
     }
     const vec = imageToVec(image, label);
     window.space_viz.addDigit(image, label, vec);
-    if (redraw != false) window.space_viz.draw();
+    if (should_redraw != false) window.space_viz.draw();
   }
-  function rotateSVProjections(){
-    window.space_viz.resetProjectionMatrix();
+  function retrainSVProjections(){
+    window.space_viz.resetProjection();
     window.space_viz.draw();
   }
   document.getElementById("SV-add-current").addEventListener("click", () => {
@@ -436,5 +553,5 @@ window.onload = async function () {
     () => {for (let i = 0; i < 100; i++) addSVDigit(false);window.space_viz.draw();}
   );
   document.getElementById("SV-reset").addEventListener("click", () => {window.space_viz.reset();});
-  document.getElementById("SV-rotate").addEventListener("click", rotateSVProjections);
+  document.getElementById("SV-retrain").addEventListener("click", retrainSVProjections);
 }

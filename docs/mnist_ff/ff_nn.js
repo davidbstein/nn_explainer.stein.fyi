@@ -29,16 +29,25 @@ class Neuron {
     return Math.tanh(sum);
   }
 
-  backwardTanh(inputs, outputGradient, learningRate) {
+  backwardTanh(inputs, outputGradient, learningRate, accumulateGradients = false) {
     let weightedSum = inputs.reduce((sum, input, i) => sum + input * this.weights[i], this.bias);
     let tanhDerivative = 1 - Math.tanh(weightedSum) ** 2;
     let weightedSumGradient = outputGradient * tanhDerivative;
     let biasGradient = weightedSumGradient;
-    this.bias -= learningRate * biasGradient;
     let weightGradients = this.weights.map((_, i) => weightedSumGradient * inputs[i]);
-    for (let i = 0; i < this.weights.length; i++) {
-      this.weights[i] -= learningRate * weightGradients[i];
+
+    // Accumulate gradients if specified
+    if (accumulateGradients) {
+      this.weightGradientsSum = this.weightGradientsSum.map((sum, index) => sum + weightGradients[index]);
+      this.biasGradientSum += biasGradient;
+    } else {
+      // Apply weight and bias updates directly
+      for (let i = 0; i < this.weights.length; i++) {
+        this.weights[i] -= learningRate * weightGradients[i];
+      }
+      this.bias -= learningRate * biasGradient;
     }
+
     let inputGradients = this.weights.map(weight => weightedSumGradient * weight);  
     return inputGradients;
   }
@@ -60,7 +69,7 @@ class Neuron {
    * @param {*} learningRate - the learning rate
    * @returns the gradient of the loss function with respect to the inputs of this neuron
    */
-  backwardSigmoid(inputs, outputGradient, learningRate) {
+  backwardSigmoid(inputs, outputGradient, learningRate, accumulateGradients = false) {
     let weightedSum = inputs.reduce((sum, input, i) => sum + input * this.weights[i], this.bias);
     let sigmoidDerivative = (1 / (1 + Math.exp(-weightedSum))) * (1 - 1 / (1 + Math.exp(-weightedSum)));
     let weightedSumGradient = outputGradient * sigmoidDerivative;
@@ -83,7 +92,7 @@ class Neuron {
     return Math.max(0, sum);
   }
 
-  backwardReLU(inputs, outputGradient, learningRate) {
+  backwardReLU(inputs, outputGradient, learningRate, accumulateGradients = false) {
     let weightedSum = inputs.reduce((sum, input, i) => sum + input * this.weights[i], this.bias);
     let reluDerivative = weightedSum > 0 ? 1 : 0;
     let weightedSumGradient = outputGradient * reluDerivative;
@@ -122,7 +131,7 @@ class Layer {
     return outputs;
   }
 
-  backward(inputs, outputGradients, learningRate) {
+  backward(inputs, outputGradients, learningRate, accumulateGradients = false) {
     let inputGradients = [];
     for (let i = 0; i < inputs.length; i++) {
       inputGradients.push(0);
@@ -131,7 +140,8 @@ class Layer {
       let neuronInputGradients = this.neurons[i].backward(
         inputs,
         outputGradients[i],
-        learningRate
+        learningRate,
+        accumulateGradients
       );
       for (let j = 0; j < inputs.length; j++) {
         inputGradients[j] += neuronInputGradients[j];
@@ -210,6 +220,7 @@ class Network {
   }
 
   changeLayersButRetainWeights(newHiddenLayerSizes) {
+    console.log(newHiddenLayerSizes)
     let oldLayers = this.layers;
     this.layers = [];
     let prevLayerSize = oldLayers[0].neurons[0].weights.length;
@@ -228,4 +239,58 @@ class Network {
       }
     }
   }
+}
+
+function dynamicLearningRate(loss, maxRate=10, decayRate=1){
+  // //exponential decay
+  // const a = maxRate;
+  // const b = decayRate;
+  // const x = loss;
+  // return a * Math.exp(-b * x);
+  return Math.min(loss * loss/decayRate, maxRate);
+}
+
+async function doBatch(batchSize, imageGetter) {
+  // Initialize gradients for batch processing
+  network.layers.forEach(layer => {
+    layer.neurons.forEach(neuron => {
+      neuron.weightGradientsSum = new Array(neuron.weights.length).fill(0);
+      neuron.biasGradientSum = 0;
+    });
+  });
+
+  // Process each example in the batch
+  let averageLoss = 0;
+  let count = 0;
+  for (let j = 0; j < batchSize; j++) {
+    const imageData = imageGetter();
+    let input = imageData.image.map(x => x / 255);
+    let label = imageData.label;
+
+    // Backward pass, accumulate gradients
+    let outputs = network.computeInternals(input);
+    let outputGradients = [];
+    for (let k = 0; k < outputs[outputs.length - 1].length; k++) {
+      const output = outputs[outputs.length - 1][k];
+      const target = k === label ? 1 : 0;
+      outputGradients.push((output - target) * (output > 0 ? 1 : 0));
+    }
+    const loss = outputGradients.reduce((sum, gradient) => sum + gradient ** 2, 0) / 2;
+    averageLoss = (loss / ++count) + (averageLoss * (count - 1) / count);
+    for (let k = network.layers.length - 1; k >= 0; k--) {
+      const layer = network.layers[k];
+      // NOTE: the `true` in the following line means accumulate gradients, don't apply them
+      outputGradients = layer.backward(outputs[k], outputGradients, null/*learning rate*/, true);
+    }
+  }
+  // Update weights and biases based on accumulated gradients
+  learningRate = dynamicLearningRate(averageLoss, Math.log10(batchSize), .01);
+  const lossTextBar = `*`.repeat(Math.round(averageLoss*100));
+  console.log(`loss: ${averageLoss.toFixed(3)}`, `learning rate: ${learningRate.toFixed(3)}`, lossTextBar);
+  network.layers.forEach(layer => {
+    layer.neurons.forEach(neuron => {
+      neuron.weights = neuron.weights.map((weight, index) => weight - learningRate * neuron.weightGradientsSum[index] / batchSize);
+      neuron.bias -= learningRate * neuron.biasGradientSum / batchSize;
+    });
+  });
 }

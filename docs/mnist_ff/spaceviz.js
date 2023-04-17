@@ -19,13 +19,13 @@ class SpaceViz {
     this.projectionMatrix = null;
   }
 
-  getProjectionMatrix() {
+  getProjection() {
     if (this.projectionMatrix === null)
       this.resetProjectionMatrix();
     return this.projectionMatrix;
   }
 
-  resetProjectionMatrix() {
+  resetProjection() {
     const n = this.images[0]?.vector?.length;
     if (!n) return;
     let projectionMatrix = [];
@@ -37,7 +37,21 @@ class SpaceViz {
     console.log(`new projection matrix (n=${n}):`, this.projectionMatrix);
   }
   
-
+  projectVector(vector) {
+    const projectionMatrix = this.getProjection();
+    if (vector.length === 2) 
+      return vector.map(normalizeOutputVal);
+    let result = [0, 0];
+    // linear projection
+    for (let i = 0; i < vector.length; i++) {
+      result[0] += vector[i] * projectionMatrix[i][0];
+      result[1] += vector[i] * projectionMatrix[i][1];
+    }
+    // Normalize
+    result[0] = Math.abs(result[0]) % 1;
+    result[1] = Math.abs(result[1]) % 1;
+    return result;
+  }
   /**
    * add an image to the canvas
    * @param {*} image a 784 number array between 0 and 1, representing an 28x28 image where 0 is black and 1 is white
@@ -99,7 +113,7 @@ class SpaceViz {
   }
 
   drawDigit(image, label, vector, scale=.25) {
-    const [x, y] = linearProjection(vector, this.getProjectionMatrix());
+    const [x, y] = this.projectVector(vector);
     const [r, g, b] = this.getColor(label);
     const imageWidth = 28 * scale;
     const imageHeight = 28 * scale;

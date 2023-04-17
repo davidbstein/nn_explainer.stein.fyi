@@ -15,6 +15,22 @@ body {
   overflow: hidden;
 }
 
+#controls {
+  display: flex;
+  border: 1px solid cyan;
+  margin-top: 1em;
+}
+.control-pad {
+  flex-grow: 1;
+}
+
+#config-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  padding: .5em;
+}
+
 #network > div {
 }
 
@@ -121,7 +137,7 @@ body {
   display: flex;
   flex-direction: row;
   gap: 1em;
-  justify-content: center;
+  justify-content: left;
   align-items: center;
 }
 
@@ -217,4 +233,35 @@ input.changed {
 
 #space-viz canvas {
   border: 1px solid white;
+}
+
+#progress-bar {
+  background: cyan;
+  white-space: nowrap;
+  overflow: hidden;
+  height: .2em;
+  display:inline-block;
+  border-radius: .2em;
+}
+
+#progress-tip{
+  border-radius: .2em;
+  height: .1em;
+  border: .1em;
+  box-shadow: 0 0 .5em .2em cyan;
+  display: inline-block;
+  height: .2em;
+  width: .2em;
+  background: cyan;
+}
+
+#progress-container {
+  display: none;
+  position: absolute;
+  width: 100%;
+  font-family: monospace;
+}
+
+#progress-label {
+  padding-left: 1em;
 }
