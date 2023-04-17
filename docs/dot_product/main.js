@@ -26,11 +26,11 @@ class VectorVisualizer {
     }
 
     this.drawArrow(this.origin, p5.Vector.add(this.origin, this.orangeVector), color(255, 165, 0));
-    this.drawArrow(this.origin, p5.Vector.add(this.origin, this.blueVector), color(0, 0, 255));
+    this.drawArrow(this.origin, p5.Vector.add(this.origin, this.blueVector), color(0, 165, 255));
 
     strokeWeight(1);
     this.drawTriangle(this.orangeVector, this.blueVector, 2, [255, 165, 0]);
-    this.drawTriangle(this.blueVector, this.orangeVector, 2, [0, 0, 255]);
+    this.drawTriangle(this.blueVector, this.orangeVector, 2, [0, 165, 255]);
     this.drawNumbers();
   }
 
@@ -67,7 +67,7 @@ class VectorVisualizer {
     line(0, height / 2, width, height / 2);
   }
 
-  drawArrow(base, vec, col, weight=4, arrow=true) {
+  drawArrow(base, vec, col, weight=6, arrow=true) {
     stroke(col);
     strokeWeight(weight);
     line(base.x, base.y, vec.x, vec.y);
