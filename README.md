@@ -106,7 +106,7 @@ In preparing to talk about how AIs turn words into points in space, it's useful 
       - ![Screen Shot 2023-09-06 at 16 35 02](https://github.com/davidbstein/nn_explainer.stein.fyi/assets/1490241/2aa76bfb-f808-4f98-83a6-1a6ab9ca6028)
   - starting training on multiple images.
     - note how the numbers  slowly clump together. (because the network needs to somehow encode the difference between numbers)
-      - ![Screen Shot 2023-09-06 at 16 47 54](https://github.com/davidbstein/nn_explainer.stein.fyi/assets/1490241/3f4b9bcf-3f8c-4e31-b1c0-dc9ccfe79573)
+      - ![Screen Shot 2023-09-06 at 19 43 25](https://github.com/davidbstein/nn_explainer.stein.fyi/assets/1490241/4c5a5c3a-32ff-4454-a9fd-46b7b4768937)
 
    
 This is how autoencoding works! I train the AI to recognize numbers, but I only retain the neurons leading up to the pinch point.
