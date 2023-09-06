@@ -33,7 +33,7 @@ Running instance of the tool at [nn-demo.stein.fyi](http://nn-demo.stein.fyi)
 **Training the AI:**
   - "training" an AI is a process of iteratively updating the weights in the network. The videos linked above and the implementation discussion below explain this process in more detail.
 
-**The buttons: **
+**The buttons:**
   - You can edit the handwritten number using the "draw mode" and "erase mode" toggle.
   - The "available digits" buttons restricts the training data to contain only certain handwritten digits.
   - The "train on multiple images" buttons will update the weights in the network using a random sample from the training data.
