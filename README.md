@@ -81,7 +81,7 @@ Experiment 1:
  - The "old" AI handles the digits it already knows.
 
 Experiment 2:
- - train a big AI (say, 8,8,8) on all digits
+ - train a big AI (try 8,8,8) on all digits
  - shrink the later layers (try 8,2) on two digits
  - the AI learns quickly (because the layers already know what to look for)
 
