@@ -3,7 +3,15 @@
  - This is an interactive tool designed to help students build intuitions about AIs.
  - Before using this tool, I recommend watching [this short course on AI](https://www.3blue1brown.com/topics/neural-networks). The tool uses the same data and visual metaphors as the course.
 
-## What's going on?
+Contents:
+ - [What's going on?](#intro)
+ - [Setup](#setup)
+ - [Example classroom use](#class)
+
+Running instance of the tool at [nn-demo.stein.fyi](http://nn-demo.stein.fyi)
+
+
+## What's going on? <a id='intro'></a>
 
 At a high level:
  - This is a hardwriting recognition AI. It uses a dataset of handwritten numbers.
@@ -32,15 +40,15 @@ The buttons:
   - The blank rectangle is for use explaining auto-encoders, I explain it more further down.
   - The "restore checkpoints" buttons will restore network and training states you saved. You may need to refresh the page after restoring a checkpoint.
 
-## Setup
+## Setup <a id='setup'></a>
 
  - The tool runs entirely in your browser. That means you'll need to train the model using the same computer and browser that you'll be using for the demo.
  - If you email me, I can set up a mechanism for importing and exporting saved networks and pre-train some good examples.
 
 
-## Concepts to demonstrate with the tool.
+# Example Classroom Use <a id='class'></a>
 
-### Basic neural net training intuitions
+## Basic neural net training intuitions
 
  - click "train(100M)". As the weights update, the tool gradually gets better at recognizing numbers.
  - You can pause to look at individual numbers.
@@ -62,7 +70,7 @@ Things to try:
  - Even if we can't read that information, the weights have information about the world. It's hard to know exactly what. Was the letter "a" in the training set? Could we figure that out?
     - Great opportunity to segway into privacy and copyright discussion.
 
-### Transfer learning.
+## Transfer learning.
 
 Experiment 1:
  - train a small net (try 4,4) on a subset of digits.
@@ -84,7 +92,7 @@ Experiment 3:
   - There's a geneology of different models: few start entirely from scratch. Many have broken chains of custody, or start with big open-source projects. And the cost of re-training is prohibitive.
   - What does that mean for liability and culpability?
 
-### Autoencoding
+## Autoencoding
 
 In preparing to talk about how AIs turn words into points in space, it's useful to build an encoder.
 
