@@ -7,6 +7,7 @@ Contents:
  - [What's going on?](#intro)
  - [Setup](#setup)
  - [Example classroom use](#class)
+ - [Implementation details](#code)
 
 Running instance of the tool at [nn-demo.stein.fyi](http://nn-demo.stein.fyi)
 
@@ -117,3 +118,11 @@ This is how autoencoding works! I train the AI to recognize numbers, but I only 
  - (There is a similar "decoder" concept, but this demo tool isn't set up to do that very well)
  - What counts a "copying" in this case? What rises to the level of a privacy issue?
  - Do we want AIs components to be able to recognize harmful things (so finished products can avoid them), or does that create a risk of misuse?
+
+
+
+# Implementation Details <a id='code'></a>
+
+The code is split into two main files: the demo and visualization ([`mnist_demo.js`](/docs/mnist_ff/mnist_demo.js)) and the neural net ([`ff_nn.js`](/docs/mnist_ff/ff_nn.js))
+
+The Neural Net comprises three classes: a `Network` containting `Layers` containing `Neuron`. Rather than optimize anything, each Neuron and Layer handles its own forward and backwards propagation. If you'd like to pause, inspect, or adjust the contents of a neuron, the model supports that. The `graph_drawer.js` file contains utility functions for visualizing the internals of a `Neuron`. 
