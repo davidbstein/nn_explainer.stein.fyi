@@ -19,7 +19,7 @@ At a high level:
  - The AI guesses what number is written by outputting ten numbers in the last layer. The closer to 1 the final value, the more the machine thinks that's the handwritten number.
 
 Inside the AI:
- - each "layer" takes a weighted average of the numbers in the previous grid. Green denotes a positive weight, red denotes a negative weight.
+ - Each "layer" takes a weighted average of the numbers in the previous column. Green denotes a positive weight, red denotes a negative weight.
  - The value of the average is denoted by the brightness of the border. Again, black is -1, white is 1.
    - For example, the default layout looks like this:
      - There are 768 numbers in the input layer.
