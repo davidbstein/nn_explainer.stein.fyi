@@ -13,13 +13,14 @@ Running instance of the tool at [nn-demo.stein.fyi](http://nn-demo.stein.fyi)
 
 ## What's going on? <a id='intro'></a>
 
-At a high level:
+**At a high level:**
  - This is a hardwriting recognition AI. It uses a dataset of handwritten numbers.
  - Each handwriting sample is encoded as 786 numbers between from -1 to 1, which I display as a grid, with -1 as black and 1 as white.
  - The AI guesses what number is written by outputting ten numbers in the last layer. The closer to 1 the final value, the more the machine thinks that's the handwritten number.
 
-Inside the AI:
- - Each "layer" takes a weighted average of the numbers in the previous column. Green denotes a positive weight, red denotes a negative weight.
+**Inside the AI:**
+ - Each "layer" takes a weighted average of the numbers in the previous column.
+ - Green denotes a positive weight, red denotes a negative weight.
  - The value of the average is denoted by the brightness of the border. Again, black is -1, white is 1.
    - For example, the default layout looks like this:
      - There are 768 numbers in the input layer.
@@ -28,10 +29,10 @@ Inside the AI:
      - The outputs are 10 weighted averages of the values in the second layer.
   - The number above the handwriting sample is the number that the handwriting doner was asked to write.
 
-Training the AI:
+**Training the AI:**
   - "training" an AI is a process of iteratively updating the weights in the network. The videos linked above and the implementation discussion below explain this process in more detail.
 
-The buttons: 
+**The buttons: **
   - You can edit the handwritten number using the "draw mode" and "erase mode" toggle.
   - The "available digits" buttons restricts the training data to contain only certain handwritten digits.
   - The "train on multiple images" buttons will update the weights in the network using a random sample from the training data.
@@ -53,7 +54,7 @@ The buttons:
  - click "train(100M)". As the weights update, the tool gradually gets better at recognizing numbers.
  - You can pause to look at individual numbers.
 
-Things to try:
+**Things to try:**
  - point out "shapes" emerging in the static. For example, a few boxes almost always get donut shape, which means the AI is learning to look for a "hole" in the number.
    - ![Screen Shot 2023-09-06 at 16 59 56](https://github.com/davidbstein/nn_explainer.stein.fyi/assets/1490241/00e17e32-8497-483a-8030-830c9afe145d)
  - hit "load random image" until you get a 4 or a 9.
