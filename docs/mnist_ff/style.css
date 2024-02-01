@@ -83,6 +83,7 @@ body {
   align-items: center;
 }
 
+
 .neuron-weight {
   border: .2em solid #888;
   margin: .2em;
@@ -91,7 +92,7 @@ body {
 .neuron-weight canvas {
   max-width: 3em;
   max-height: 3em;
-  background: #888;
+  background: #555;
   image-rendering: pixelated;
 }
 
@@ -106,7 +107,7 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2em;
+  gap: .5em;
   padding: .5em;
 }
 
@@ -116,7 +117,15 @@ body {
   gap: .5em;
   align-items: center;
 }
+#output .neuron-output {
+  display:  none;
+}
 
+.output-circle-container {
+  display: flex;
+  gap: .5em;
+  align-items: center;
+}
 .output-circle {
   width: 2em;
   height: 2em;
@@ -229,7 +238,12 @@ input.changed {
 #training-digits {
   gap: .2em;
 }
-
+#training-rate-label
+{
+  display: inline-block;
+  font-family: monospace;
+  width: 1.5em;
+}
 #space-viz-container {
   margin-top: 2em;
   display: flex;
@@ -276,4 +290,6 @@ input.changed {
 
 #progress-label {
   padding-left: 1em;
+  font-size: 3em;
+  text-align: center;
 }

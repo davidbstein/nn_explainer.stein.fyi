@@ -8,9 +8,10 @@
     <link rel="stylesheet" type="text/css" href="/mnist_ff/style.css">
     <!-- <script type="text/javascript" src="mnist_handwritten_train.js"></script> -->
     <script type="text/javascript" src="/mnist_ff/mnist_handwritten_test.js"></script>
-    <script type="text/javascript" src="/mnist_ff/ff_nn.js"></script>
+    <script type="text/javascript" src="/mnist_ff/main.js"></script>
+    <!-- <script type="text/javascript" src="/mnist_ff/ff_nn.js"></script> -->
     <script type="text/javascript" src="/mnist_ff/spaceviz.js"></script>
-    <script type="text/javascript" src="/mnist_ff/mnist_demo.js"></script>
+    <!-- <script type="text/javascript" src="/mnist_ff/mnist_demo.js"></script> -->
     <!--favicon as b64 image-->
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAAN" />  
   </head>
@@ -79,6 +80,12 @@
           <input id="layers-input" type="text"/>
           <button id="set-layers" disabled="true">UPDATE</button>
           <button id="save-checkpoint">Save Checkpoint</button>
+        </div>
+        <div class="buttons">
+          <div class="button-label"> manually adjust system </div>
+          <button id="dampen-weights">DAMPEN</button>
+          <div>Training Rate: <span id="training-rate-label">1</span></div>
+          <input type="range" id="training-rate" name="volume" min="0" max="500" value="10" />
         </div>
       </div>
       <div class="control-pad"></div>
