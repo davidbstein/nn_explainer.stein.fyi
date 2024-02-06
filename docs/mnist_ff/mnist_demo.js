@@ -228,6 +228,6 @@ window.onload = async function () {
   document.getElementById("save-checkpoint").addEventListener("click", () => saveCheckpoint(network));
   updateCheckpointList();
 
+  await setSV(2);
   loadSpaceViz();
-  setSV(3);
 }

@@ -55,7 +55,7 @@ async function doBatch(network, batchSize, imageGetter) {
   // Update weights and biases based on accumulated gradients
   const learningRate = dynamicLearningRate(averageLoss, Math.log10(batchSize));
   const lossTextBar = `*`.repeat(Math.round(averageLoss*100));
-  console.info(`loss: ${averageLoss.toFixed(3)}`, `learning rate: ${learningRate.toFixed(3)}`, lossTextBar);
+  //console.info(`loss: ${averageLoss.toFixed(3)}`, `learning rate: ${learningRate.toFixed(3)}`, lossTextBar);
   network.layers.forEach(layer => {
     layer.neurons.forEach(neuron => {
       neuron.weights = neuron.weights.map((weight, index) => weight - learningRate * neuron.weightGradientsSum[index] / batchSize);

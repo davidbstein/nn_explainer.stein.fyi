@@ -1,13 +1,13 @@
 
 const SAMPLE_RATE = 500;
 const SAMPLE_N = 10;
-
+const RESAMPLE_POINTER = {n: 0}
 /**
  * SPACE VIZ
  */
 
 function imageToVec(input, label){
-  const outputs = network.computeInternals(input);
+  const outputs = window.network.computeInternals(input);
   let layer = null;
   for (let i = 0; i < outputs.length; i++) {
     let currentLayer = outputs[i];
@@ -27,6 +27,8 @@ function setSV(dims){
   window.space_viz = space_viz;
   return space_viz;
 }
+
+
 async function addSVDigit(should_redraw, image, label){
   if (image === undefined || label === undefined) {
     const imageData = getRandomImage();
@@ -37,6 +39,8 @@ async function addSVDigit(should_redraw, image, label){
   await window.space_viz.addDigit(image, label, vec);
   if (should_redraw != false) window.space_viz.draw();
 }
+
+
 function retrainSVProjections(){
   window.space_viz.resetProjection();
   window.space_viz.draw();
@@ -46,7 +50,25 @@ async function resampleSV(){
   window._CONTINUE_RESAMPLE = !window._CONTINUE_RESAMPLE;
   setTimeout(continueResampleSV, SAMPLE_RATE);
 }
+
+
 async function continueResampleSV(){
+  for (let i = 0; i < SAMPLE_N; i++) {
+    const cur = RESAMPLE_POINTER.n++ % window.space_viz.images.length
+    const im = window.space_viz.images[cur];
+    im.vector = imageToVec(im.image, im.label);
+    im.projectedVector = undefined;
+  }
+  console.log(window.space_viz.images[0].vector);
+  console.log(window.space_viz.images[0].projectedVector);
+  window.space_viz.draw();
+  if (window._CONTINUE_RESAMPLE) {
+    setTimeout(continueResampleSV, SAMPLE_RATE);
+  }
+}
+
+
+/*async function continueResampleSV(){
   for (let i = 0; i < SAMPLE_N; i++) {
     window.space_viz.images.shift()
     await addSVDigit(false);
@@ -56,11 +78,14 @@ async function continueResampleSV(){
     setTimeout(continueResampleSV, SAMPLE_RATE);
   }
 }
-async function dimToggleSV(){
+
+
+*/async function dimToggleSV(){
   setSV(window.space_viz.dims === 2 ? 3 : 2);
   window.space_viz.draw();
   document.getElementById("SV-dim-toggle").innerHTML = window.space_viz.dims === 2 ? "2D" : "3D";
 }
+
 
 async function loadSpaceViz(){
   document.getElementById("SV-add-current").addEventListener("click", () => {
@@ -76,7 +101,7 @@ async function loadSpaceViz(){
     window.space_viz.reset();
   });
   document.getElementById("SV-retrain").addEventListener("click", retrainSVProjections);
-  document.getElementById("SV-dim-toggle").innerHTML = window.space_viz.dims === 2 ? "2D" : "3D";
+  document.getElementById("SV-dim-toggle").innerHTML = window.space_viz?.dims === 2 ? "2D" : "3D";
   document.getElementById("SV-dim-toggle").addEventListener("click", dimToggleSV);
 }
 
@@ -237,7 +262,7 @@ class SpaceViz {
       await this.resetProjection();
     }
     const scale = 2 / Math.min((Math.max(1, Math.log10(this.images.length)-1)),4);
-    console.log(scale);
+    //console.log(scale);
     for (let image of this.images) {
       if (!image.projectedVector) {
         image.projectedVector = this.projectVector(image.vector);
