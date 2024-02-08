@@ -1,6 +1,7 @@
 body {
   background-color: black;
   color: white;
+  font-family: sans-serif;
 }
 #network {
   position: relative;
@@ -20,6 +21,8 @@ body {
   display: flex;
   border: 1px solid cyan;
   margin-top: 1em;
+  justify-content: space-around;
+  align-items: center;
 }
 .control-pad {
   flex-grow: 1;
@@ -27,14 +30,20 @@ body {
 
 #config-container {
   display: flex;
-  flex-direction: column;
+  width:  100%;
+  flex-direction: row;
   gap: 1em;
   padding: .5em;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 #network > div {
 }
-
+#input-image {
+  cursor: crosshair;
+}
 #input-image .input-row {
   display: flex;
   flex-direction: row;
@@ -49,6 +58,15 @@ body {
 }
 
 #input-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  gap: 1em;
+  height: 100%;
+}
+
+#hidden-layers-container {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
@@ -83,24 +101,42 @@ body {
   align-items: center;
 }
 
-
+.neuron-viz {
+  border: 1px solid #333;
+}
 .neuron-weight {
   border: .2em solid #888;
   margin: .2em;
 }
 
-.neuron-weight canvas {
+.neuron-weight canvas, .neuron-values canvas, .neuron-inputs canvas {
   max-width: 3em;
   max-height: 3em;
   background: #555;
   image-rendering: pixelated;
 }
 
+div.neuron-values canvas {
+  background: #444;
+}
+
+.neuron-internals {
+  display: flex;
+  align-items: center;
+  gap: .2em;
+  margin-right: .2em;
+}
+
+.hide-internals .neuron-internals {
+  display: none;
+}
+
 .neuron-output {
-  width: 1em;
+  width: 3em;
   font-family: monospace;
   font-size: small;
   color: #aaa;
+  font-weight: bold;
 }
 
 #output {
@@ -154,8 +190,22 @@ body {
   display: flex;
   flex-direction: row;
   gap: 1em;
-  justify-content: left;
+  justify-content: space-around;
   align-items: center;
+  order: 1;
+}
+
+.buttons .buttons-container {
+  display: none;
+}
+
+.buttons.show-content {
+  order: 2;
+}
+
+.buttons.show-content .buttons-container {
+  display: flex;
+  width: 100%;
 }
 
 button, input, label {
@@ -230,9 +280,13 @@ input.changed {
 .button-label {
   font-size: 1.5em;
   font-family: sans-serif;
-  width: 7em;
-  text-align: right;
+  width: 9em;
+  text-align: center;
   color: gray;
+}
+
+.show-content .button-label {
+  text-align: right;
 }
 
 #training-digits {
@@ -292,4 +346,9 @@ input.changed {
   padding-left: 1em;
   font-size: 3em;
   text-align: center;
+}
+
+
+.hidden {
+  display: none;
 }

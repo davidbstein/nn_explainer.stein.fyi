@@ -1,41 +1,42 @@
 
 <html>
-  <head>
-    <title> Neural Net Example </title>
-    <script src="https://scienceai.github.io/tsne-js/tsne.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<head>
+  <title> Neural Net Example </title>
+  <script src="https://scienceai.github.io/tsne-js/tsne.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <link rel="stylesheet" type="text/css" href="/mnist_ff/style.css">
-    <!-- <script type="text/javascript" src="mnist_handwritten_train.js"></script> -->
-    <script type="text/javascript" src="/mnist_ff/mnist_handwritten_test.js"></script>
-    <script type="text/javascript" src="/mnist_ff/main.js"></script>
-    <!-- <script type="text/javascript" src="/mnist_ff/ff_nn.js"></script> -->
-    <!-- <script type="text/javascript" src="/mnist_ff/spaceviz.js"></script> -->
-    <!-- <script type="text/javascript" src="/mnist_ff/mnist_demo.js"></script> -->
-    <!--favicon as b64 image-->
-    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAAN" />  
-  </head>
-  <body>
-    <div id="progress-container">
-      <div id="progress-bar"></div><div id="progress-tip"></div>
-      <div id="progress-label"></div>
-    </div>
-    <div id="network">
-      <div id="input-container">
-        <div id="input-label"></div>
-        <div id="input-image"></div>
-        <div id="edit-buttons" class="buttons">
-          <button id="draw-erase-toggle">draw mode</button>
-        </div>
+  <link rel="stylesheet" type="text/css" href="/mnist_ff/style.css">
+  <script type="text/javascript" src="/mnist_ff/mnist_handwritten_test.js"></script>
+  <script type="text/javascript" src="/mnist_ff/main.js"></script>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAAN" />
+</head>
+<body>
+  <div id="progress-container">
+    <div id="progress-bar"></div><div id="progress-tip"></div>
+    <div id="progress-label"></div>
+  </div>
+  <div id="network" class="hide-internals">
+    <div id="input-container">
+      <div id="input-label">Current Value: <span id="input-label-value"></span></div>
+      <div id="input-image"></div>
+      <div id="edit-buttons" class="buttons">
+        <button id="draw-erase-toggle">draw mode</button>
       </div>
+    </div>
+    <div id="hidden-layers-container">
+      <div>Hidden Layers</div>
       <div id="hidden-layers"></div>
-      <div id="output"></div>
-    </div> 
-    <div id="controls">
-      <div class="control-pad"></div>
-      <div id="config-container">
-        <div id="training-digits" class="buttons">
-          <div class="button-label"> available digits: </div>
+      <div id="layers-viz-buttons">
+        <button id="layer-viz-mode-toggle">show internals</button>
+      </div>
+    </div>
+    <div id="output"></div>
+  </div>
+  <div id="controls">
+    <div id="config-container">
+      <div id="training-digits" class="buttons">
+        <div class="button-label"> Adjust Available Digits </div>
+        <div class="buttons-container">
           <input class="digit-checkbox" type="checkbox" id="digit0" name="digit" value="0" checked="true">
           <label class="digit-label" for="digit0">0</label>
           <input class="digit-checkbox" type="checkbox" id="digit1" name="digit" value="1" checked="true">
@@ -59,8 +60,10 @@
           <button id="deselect-all-digits">none</button>
           <button id="select-all-digits">all</button>
         </div>
-        <div class="buttons">
-          <div class="button-label"> train on multiple images </div>
+      </div>
+      <div class="buttons">
+        <div class="button-label"> Train on Multiple Images </div>
+        <div class="buttons-container">
           <button id="train-1">Train (1)</button>
           <button id="train-1000">Train (1000)</button>
           <button id="train-100k">Train (100k)</button>
@@ -68,42 +71,63 @@
           <button id="reset-weights">RESET</button>
           <button id="pause-training">PAUSE</button>
         </div>
-        <div class="buttons">
-          <div class="button-label"> train on a single image </div>
+      </div>
+      <div class="buttons">
+        <div class="button-label"> Train on One Image </div>
+        <div class="buttons-container">
           <button id="update-weights">Update Weights (1) </button>
           <button id="update-weights-1000">Update Weights (10000)</button>
           <button id="load-random-image">Load Random Image</button>
           <button id="clear-image">CLEAR</button>
         </div>
-        <div class="buttons">
-          <div class="button-label"> adjust network layout </div>
+      </div>
+      <div class="buttons">
+        <div class="button-label"> Adjust Network Layout </div>
+        <div class="buttons-container">
           <input id="layers-input" type="text"/>
           <button id="set-layers" disabled="true">UPDATE</button>
           <button id="save-checkpoint">Save Checkpoint</button>
         </div>
-        <div class="buttons">
-          <div class="button-label"> manually adjust system </div>
+      </div>
+      <div class="buttons">
+        <div class="button-label"> Adjust Hyperparameters </div>
+        <div class="buttons-container">
           <button id="dampen-weights">DAMPEN</button>
           <div>Training Rate: <span id="training-rate-label">1</span></div>
           <input type="range" id="training-rate" name="volume" min="0" max="500" value="10" />
         </div>
       </div>
-      <div class="control-pad"></div>
     </div>
-    <div id="space-viz-container">
-      <div id="space-viz"></div>
-      <div class="buttons">
-        <button id="SV-add-current"> add current </button>
-        <button id="SV-add-random"> add random </button>
-        <button id="SV-add-100"> add 100 </button>
-        <button id="SV-resample"> resample </button>
-        <button id="SV-reset"> reset </button>
-        <button id="SV-retrain"> retrain </button>
-        <button id="SV-dim-toggle"> 2D </button>
-      </div>
+  </div>
+  <div id="space-viz-container">
+    <div id="space-viz"></div>
+    <div class="buttons">
+      <button id="SV-add-current"> add current </button>
+      <button id="SV-add-random"> add random </button>
+      <button id="SV-add-100"> add 100 </button>
+      <button id="SV-resample"> resample </button>
+      <button id="SV-reset"> reset </button>
+      <button id="SV-retrain"> retrain </button>
+      <button id="SV-dim-toggle"> 2D </button>
     </div>
-    <div id="checkpoints">
-      <div class="button-label"> Restore Checkpoints </div>  
-    </div>
-  </body>
+  </div>
+  <div id="checkpoints">
+    <div class="button-label"> Restore Checkpoints </div>
+  </div>
+  <script>
+    (function(){
+
+      function toggleButtonVisibility(event) {
+        const buttonLabelElement = event.target;
+        buttonLabelElement.parentElement.classList.toggle("show-content");
+      }
+
+      Array.from(document.querySelectorAll(".button-label")).map((buttonLabelElement) => {
+        console.log(buttonLabelElement);
+        buttonLabelElement.onclick = toggleButtonVisibility;
+        console.log(buttonLabelElement.onclick);
+      });
+    })();
+  </script>
+</body>
 </html>

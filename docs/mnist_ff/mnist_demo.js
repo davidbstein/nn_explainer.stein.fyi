@@ -159,6 +159,11 @@ window.onload = async function () {
     button.innerHTML = window.drawMode ? "draw mode" : "erase mode";
   }
 
+  function toggleVizMode(event) {
+    const toggleButton = event.target;
+    document.querySelector("#network").classList.toggle("hide-internals");
+  }
+
   /**
    * START SIMULATOR
    */
@@ -187,6 +192,7 @@ window.onload = async function () {
   /**
    * SETUP BUTTONS
    */
+  document.getElementById('layer-viz-mode-toggle').addEventListener("click", toggleVizMode);
   document.getElementById("pause-training").addEventListener("click", () => window.STOP_SIGNAL = true);
   document.getElementById("load-random-image").addEventListener("click", loadRandomImage);
   document.getElementById("clear-image").addEventListener("click", clearImage);

@@ -3,7 +3,26 @@ function easingFn(x) {
   return Math.min(eased*1.3, 1);
 };
 
-function drawNeuronWeights(target, weights, width, height) {
+function getColor(color_1, color_2, value, _easingFn=easingFn) {
+  //let color = Math.floor(Math.abs(weight) * 255);
+  let alpha = Math.floor(_easingFn(Math.abs(value))*255);
+  //let color = Math.floor((weight * weight) * 255);
+  const to_ret = [0,0,0,0];
+  if (value > 0) {
+    to_ret[0] = color_1[0];
+    to_ret[1] = color_1[1];
+    to_ret[2] = color_1[2];
+    to_ret[3] = alpha;
+  } else {
+    to_ret[0] = color_2[0];
+    to_ret[1] = color_2[1];
+    to_ret[2] = color_2[2];
+    to_ret[3] = alpha;
+  }
+  return to_ret;
+}
+
+function drawNeuronWeights(target, weights, width, height, color_1=[0,255,0], color_2=[255,0,0], _easingFn=easingFn) {
   let canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -16,24 +35,16 @@ function drawNeuronWeights(target, weights, width, height) {
     for (let j = 0; j < height; j++) {
       let index = (i + j * width) * 4;
       let weight = weights[i + j * width];
-      //let color = Math.floor(Math.abs(weight) * 255);
-      let color = Math.floor(easingFn(Math.abs(weight))*255);
-      //let color = Math.floor((weight * weight) * 255);
-      if (weight > 0) {
-        data[index + 0] = 0;
-        data[index + 1] = 255;
-        data[index + 2] = 0;
-        data[index + 3] = color;
-      } else {
-        data[index + 0] = 255;
-        data[index + 1] = 0;
-        data[index + 2] = 0;
-        data[index + 3] = color;
-      }
+      let color = getColor(color_1, color_2, weight, _easingFn);
+      data[index + 0] = color[0]
+      data[index + 1] = color[1]
+      data[index + 2] = color[2]
+      data[index + 3] = color[3]
     }
   }
   ctx.putImageData(imageData, 0, 0);
   target.appendChild(canvas);
+  return canvas;
 }
 
 /**
@@ -48,20 +59,67 @@ function drawNeuronWeights(target, weights, width, height) {
  * @param {*} target
  * @param {*} neuron
  */
-function drawNeuron(target, neuron, output) {
+function drawNeuron(target, neuron, output, inputs) {
   let weightDiv = document.createElement("div");
   weightDiv.className = "neuron-weight";
+  let internalsDiv = document.createElement("div");
+  internalsDiv.className = "neuron-internals";
   let outputDiv = document.createElement("div");
   outputDiv.className = "neuron-output";
+
   if (neuron.weights.length === 784) {
     drawNeuronWeights(weightDiv, neuron.weights, 28, 28);
   } else {
     drawNeuronWeights(weightDiv, neuron.weights, 1, neuron.weights.length);
   }
+
+  drawNeuronInternals(internalsDiv, neuron, output, inputs);
+
   weightDiv.style.borderColor = `rgb(${Math.floor(output * 255)}, ${Math.floor(output * 255)}, ${Math.floor(output * 255)})`;
   outputDiv.innerHTML = output.toFixed(2);
+  const outputColor = getColor([128, 255, 128], [255,128,128], output);
+  outputDiv.style.color = `rgb(${outputColor.slice(0, 3).join(',')}, ${(1+outputColor[3])/2})`
+
   target.appendChild(weightDiv);
+  target.appendChild(internalsDiv);
   target.appendChild(outputDiv);
+}
+
+function drawNeuronInternals(target, neuron, output, inputs) {
+  if (inputs) {
+    const scaled = inputs.map((weight, idx) => weight * neuron.weights[idx]);
+    let inputDiv = document.createElement("div");
+    inputDiv.className = "neuron-inputs";
+    let valueDiv = document.createElement("div");
+    valueDiv.className = "neuron-values";
+
+    const inputColors = [[255, 128, 128], [128, 255, 128]];
+    const valueColors = [[255, 64, 64], [64, 255, 64]];
+
+    if (inputs.length === 784) {
+      drawNeuronWeights(inputDiv, inputs, 28, 28, inputColors[1], inputColors[0]);
+    } else {
+      const canvas = drawNeuronWeights(inputDiv, inputs, 1, inputs.length, inputColors[1], inputColors[0]);
+      canvas.style.width = ".25em";
+    }
+
+    if (scaled.length === 784) {
+      drawNeuronWeights(valueDiv, scaled, 28, 28, valueColors[1], valueColors[0], Math.abs);
+    } else {
+      const canvas = drawNeuronWeights(valueDiv, scaled, 1, scaled.length, valueColors[1], valueColors[0], (w) => (10+Math.abs(w))/10);
+      canvas.style.width = ".25em";
+    }
+
+
+    let timesSpan = document.createElement("div");
+    timesSpan.innerHTML = "x"
+    target.appendChild(timesSpan);
+    target.appendChild(inputDiv);
+    let eqSpan = document.createElement("div");
+    eqSpan.innerHTML = "="
+    target.appendChild(eqSpan);
+    target.appendChild(valueDiv);
+  }
 }
 
 /**
@@ -69,12 +127,13 @@ function drawNeuron(target, neuron, output) {
  * @param {*} target
  * @param {*} layer
  */
-function drawHiddenLayer(target, layer, outputs) {
+function drawHiddenLayer(target, layer, outputs, inputs) {
   let div = document.createElement("div");
   div.className = "hidden-layer";
   for (let i = 0; i < layer.neurons.length; i++) {
     let neuronDiv = document.createElement("div");
-    drawNeuron(neuronDiv, layer.neurons[i], outputs[i]);
+    neuronDiv.className = "neuron-viz";
+    drawNeuron(neuronDiv, layer.neurons[i], outputs[i], inputs);
     div.appendChild(neuronDiv);
   }
   target.appendChild(div);
@@ -90,7 +149,7 @@ function normalizeOutputVal(val){
  * each circle is labeled with the probability of that digit, formatted to 2 decimal places.
  * @param {*} outputs - a 10 number array between 0 and 1, representing the probability of each digit
  */
-function drawOutput(target, layer, outputs) {
+function drawOutput(target, layer, outputs, inputs) {
   for (let i = 0; i < 10; i++) {
     let div = document.createElement("div");
     let circleDiv = document.createElement("div");
@@ -98,7 +157,7 @@ function drawOutput(target, layer, outputs) {
     let outputColor = Math.min(val, 1);
     outputColor = 1 - (1-outputColor) * (1-outputColor);
     outputColor *= 255;
-    drawNeuron(div, layer.neurons[i], outputs[i]);
+    drawNeuron(div, layer.neurons[i], outputs[i], inputs);
     circleDiv.innerHTML = (`
       <div class='output-circle' style="background: rgb(${outputColor}, ${outputColor}, ${outputColor});">
         <span style='color:${outputColor < 128 ? "white" : "black"}'>${i}</span>
@@ -188,7 +247,7 @@ function drawInputImage(target, pixelData) {
  */
 function drawNetwork(network, inputs) {
   const inputTarget = document.getElementById("input-image");
-  const inputLabelTarget = document.getElementById("input-label");
+  const inputLabelTarget = document.getElementById("input-label-value");
   const hiddenTarget = document.getElementById("hidden-layers");
   const outputTarget = document.getElementById("output");
   inputTarget.innerHTML = "";
@@ -197,12 +256,12 @@ function drawNetwork(network, inputs) {
   outputTarget.innerHTML = "";
   drawInputImage(inputTarget, inputs);
   let layerOutputs = network.computeInternals(inputs);
-  console.log(layerOutputs);
+  //console.log(layerOutputs);
   for (let i = 0; i < network.layers.length-1; i++) {
-    drawHiddenLayer(hiddenTarget, network.layers[i], layerOutputs[i+1]);
+    drawHiddenLayer(hiddenTarget, network.layers[i], layerOutputs[i+1], layerOutputs[i]);
   }
   const outputDiv = document.createElement("div");
-  drawOutput(outputTarget, network.layers[network.layers.length-1], layerOutputs[layerOutputs.length - 1]);
+  drawOutput(outputTarget, network.layers[network.layers.length-1], layerOutputs[layerOutputs.length - 1], layerOutputs[layerOutputs.length - 2]);
 }
 
 

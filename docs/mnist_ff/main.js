@@ -5,7 +5,7 @@ function load_module(path) {
   if (window._LOADED_MODULES.indexOf(path) < 0) {
     const head = document.querySelector("head");
     const elem = document.createElement("script");
-    elem.src = path;
+    elem.src = `${path}?t=${Date.now()}`;
     head.appendChild(elem);
   }
 }
