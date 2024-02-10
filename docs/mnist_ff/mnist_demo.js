@@ -249,7 +249,7 @@ window.onload = async function () {
     }
   }
   document.getElementById("set-layers").addEventListener("click", loadNewLayers);
-  document.getElementById("save-checkpoint").addEventListener("click", () => saveCheckpoint(network));
+  document.getElementById("save-checkpoint").addEventListener("click", () => saveCheckpoint());
   updateCheckpointList();
 
   await setSV(2);

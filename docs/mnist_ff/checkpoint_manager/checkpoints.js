@@ -1,5 +1,6 @@
 
-function saveCheckpoint(network) {
+function saveCheckpoint() {
+  alert("TODO: copy over over localstorage");
   console.log("saved!");
   const layers = _serializeNetwork(network);
   const checkpointID = Date.now();
