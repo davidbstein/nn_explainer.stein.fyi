@@ -29,7 +29,7 @@ function drawNeuronWeights(target, weights, width, height, color_1=[0,255,0], co
   const ratio = height/width;
   canvas.style = `width: ${width}em; height: ${height}em;`
   let ctx = canvas.getContext("2d");
-  let imageData = ctx.getImageData(0, 0, width, height);
+  let imageData = ctx.createImageData(width, height);
   let data = imageData.data;
   for (let i = 0; i < width; i++) {
     for (let j = 0; j < height; j++) {
@@ -75,18 +75,19 @@ function drawNeuron(target, neuron, output, inputs) {
 
   drawNeuronInternals(internalsDiv, neuron, output, inputs);
 
-  weightDiv.style.borderColor = `rgb(${Math.floor(output * 255)}, ${Math.floor(output * 255)}, ${Math.floor(output * 255)})`;
+  //weightDiv.style.borderColor = `rgb(${Math.floor(output * 255)}, ${Math.floor(output * 255)}, ${Math.floor(output * 255)})`;
   outputDiv.innerHTML = output.toFixed(2);
   const outputColor = getColor([128, 255, 128], [255,128,128], output);
-  outputDiv.style.color = `rgb(${outputColor.slice(0, 3).join(',')}, ${(1+outputColor[3])/2})`
-
+  const bgColor = `rgb(${outputColor.slice(0, 3).map((n) => Math.abs(Math.floor(n * output))).join(',')})`;
+  const fgColor = `rgb(${outputColor.slice(0, 3).map((n) => n/2).join(',')}`;
+  outputDiv.setAttribute("style", `background-color: ${bgColor}; color: ${fgColor}`)
   target.appendChild(weightDiv);
   target.appendChild(internalsDiv);
   target.appendChild(outputDiv);
 }
 
 function drawNeuronInternals(target, neuron, output, inputs) {
-  if (inputs) {
+  if (inputs && !window._INTERNALS_HIDDEN) {
     const scaled = inputs.map((weight, idx) => weight * neuron.weights[idx]);
     let inputDiv = document.createElement("div");
     inputDiv.className = "neuron-inputs";
@@ -119,6 +120,10 @@ function drawNeuronInternals(target, neuron, output, inputs) {
     eqSpan.innerHTML = "="
     target.appendChild(eqSpan);
     target.appendChild(valueDiv);
+    let biasDiv = document.createElement("div");
+    biasDiv.className = "neuron-bias";
+    biasDiv.innerHTML = `${neuron.bias < 0 ? '+' : '-'}${Math.abs(neuron.bias).toFixed(2)}`;
+    target.appendChild(biasDiv);
   }
 }
 
@@ -238,6 +243,14 @@ function drawInputImage(target, pixelData) {
   }
 }
 
+function fixScalingIssue(){
+  const boxHeight = document.getElementById("hidden-layers").clientHeight;
+  for (let layerDiv of document.querySelectorAll(".hidden-layer")) {
+    const ratio = .9 * boxHeight / layerDiv.clientHeight;
+    if (ratio < 1) layerDiv.style.transform = `scale(${ratio})`;
+  }
+}
+
 /**
  * draw the input layer into the #input-image div,
  * computes the intermediate outputs for the hidden layers and draws them into the #hidden-layers div,
@@ -256,12 +269,12 @@ function drawNetwork(network, inputs) {
   outputTarget.innerHTML = "";
   drawInputImage(inputTarget, inputs);
   let layerOutputs = network.computeInternals(inputs);
-  //console.log(layerOutputs);
   for (let i = 0; i < network.layers.length-1; i++) {
     drawHiddenLayer(hiddenTarget, network.layers[i], layerOutputs[i+1], layerOutputs[i]);
   }
   const outputDiv = document.createElement("div");
   drawOutput(outputTarget, network.layers[network.layers.length-1], layerOutputs[layerOutputs.length - 1], layerOutputs[layerOutputs.length - 2]);
+  fixScalingIssue();
 }
 
 
@@ -284,14 +297,16 @@ async function updateProgressBar(num, denom, startTime, scores){
   const remaining = elapsed / progress - elapsed;
   const progressContainer = document.getElementById("progress-container");
   const progressBar = document.getElementById("progress-bar");
-  const progressLabel = document.getElementById("progress-label");
+  const progressLabel = document.getElementById("progress-label-n");
+  const progressETA = document.getElementById("progress-label-eta");
   //set width of progress bar
   progressBar.style.width = `${progress * 100}%`;
   //set text of progress bar
   let scoreStr = scores ? [
     `accuracy: ${(scores.accuracy*100).toFixed(0)}%`,
   ].join(", ") : "";
-  progressLabel.innerHTML = `${(progress*100).toFixed(1)}% (${num} / ${denom}) ETA: ${secondsToString(remaining/1000)}  (${scoreStr}))`;
+  progressLabel.innerHTML = `${(progress*100).toFixed(1)}% (${num} / ${denom})`;
+  progressETA.innerHTML = `ETA: ${secondsToString(remaining/1000)}  (${scoreStr}))`;
   //clear progress bar
   progressContainer.style.display = "block";
 }

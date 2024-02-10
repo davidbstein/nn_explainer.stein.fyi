@@ -7,7 +7,7 @@ function saveCheckpoint(network) {
   const checkpoint = {
     id: checkpointID,
     layout: layout,
-    layers: layers.slice(0, -1)
+    layers: layers
   };
   localStorage.setItem(`checkpoint-${checkpointID}`, JSON.stringify(checkpoint));
   updateCheckpointList();
@@ -28,11 +28,12 @@ function _formatCheckpoint(checkpoint) {
   const date = new Date(checkpoint.id)
   const localtime = date.toLocaleTimeString();
   const localdate = date.toLocaleDateString();
-  return `${localdate} ${localtime} -- [${checkpoint.layout.slice(0,-1).join(",")}]`;
+  return `${localdate} -- [${checkpoint.layout.slice(0,-1).join(",")}] <!-- ${checkpoint?.id} -->`;
 }
 
 function updateCheckpointList(){
   const checkpointDiv = document.getElementById("checkpoints");
+  checkpointDiv.innerHTML = "";
   for (let checkpoint of listCheckpoints()) {
     const button = document.createElement("button");
     // checkpoint.id is a timestamp, convert to isodate
@@ -95,7 +96,6 @@ function _loadWeightsFromSerialized(layers){
       }
       network.layers[i].neurons[j].bias = layers[i][j].bias;
     }
-    console.log(`RESTORED ${count} neurons`);
   }
 }
 
@@ -122,18 +122,16 @@ async function restorePretrained(preload) {
   const layout = checkpoint.layout.slice(0,-1);
   document.getElementById("layers-input").value = layout.join(",");
   window.history.pushState({}, "", `?${layout.join(",")}`);
-  network.changeLayersButRetainWeights(layout);
-  console.log(layout);
+  window.network.changeLayersButRetainWeights(layout);
   _loadWeightsFromSerialized(checkpoint.layers);
   redraw();
 }
 
 async function restoreNetworkWeightsFromPretrained(preload){
   const name = `preload_${preload.size.join("_")}`;
-  load_module(`./checkpoint_manager/${name}.js`);
+  await load_module(`./checkpoint_manager/${name}.js`);
   return await (async function(name){
     const get_fn = window[name];
-    console.log(name, get_fn);
     return get_fn();
   })(name);
 }

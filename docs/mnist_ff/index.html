@@ -13,7 +13,10 @@
 <body>
   <div id="progress-container">
     <div id="progress-bar"></div><div id="progress-tip"></div>
-    <div id="progress-label"></div>
+    <div id="progress-label">
+      <div id="progress-label-n"></div>
+      <div id="progress-label-eta"></div>
+    </div>
   </div>
   <div id="network" class="hide-internals">
     <div id="input-container">
@@ -25,12 +28,33 @@
     </div>
     <div id="hidden-layers-container">
       <div>Hidden Layers</div>
-      <div id="hidden-layers"></div>
+      <div id="all-layers">
+        <div id="hidden-layers"></div>
+        <div id="output"></div>
+      </div>
       <div id="layers-viz-buttons">
         <button id="layer-viz-mode-toggle">show internals</button>
       </div>
     </div>
-    <div id="output"></div>
+
+    <div id="space-viz-toggle-container">
+      <button id="space-viz-toggle">toggle latent space visualizer</button>
+    </div>
+    <div id="space-viz-container" class="minimized">
+      <div id="space-viz"></div>
+      <div class="space-viz-controls buttons">
+        <button id="SV-add-current"> add current </button>
+        <button id="SV-add-random"> add random </button>
+        <button id="SV-add-100"> add 100 </button>
+      </div>
+      <div class="space-viz-controls buttons">
+        <button id="SV-resample"> resample </button>
+        <button id="SV-reset"> reset </button>
+        <button id="SV-retrain"> retrain </button>
+        <button id="SV-dim-toggle"> 2D </button>
+      </div>
+    </div>
+
   </div>
   <div id="controls">
     <div id="config-container">
@@ -99,35 +123,21 @@
       </div>
     </div>
   </div>
-  <div id="space-viz-container">
-    <div id="space-viz"></div>
-    <div class="buttons">
-      <button id="SV-add-current"> add current </button>
-      <button id="SV-add-random"> add random </button>
-      <button id="SV-add-100"> add 100 </button>
-      <button id="SV-resample"> resample </button>
-      <button id="SV-reset"> reset </button>
-      <button id="SV-retrain"> retrain </button>
-      <button id="SV-dim-toggle"> 2D </button>
-    </div>
-  </div>
   <div id="checkpoints">
     <div class="button-label"> Restore Checkpoints </div>
   </div>
   <script>
-    (function(){
+  (function(){
 
-      function toggleButtonVisibility(event) {
-        const buttonLabelElement = event.target;
-        buttonLabelElement.parentElement.classList.toggle("show-content");
-      }
+    function toggleButtonVisibility(event) {
+      const buttonLabelElement = event.target;
+      buttonLabelElement.parentElement.classList.toggle("show-content");
+    }
 
-      Array.from(document.querySelectorAll(".button-label")).map((buttonLabelElement) => {
-        console.log(buttonLabelElement);
-        buttonLabelElement.onclick = toggleButtonVisibility;
-        console.log(buttonLabelElement.onclick);
-      });
-    })();
+    Array.from(document.querySelectorAll(".button-label")).map((buttonLabelElement) => {
+      buttonLabelElement.onclick = toggleButtonVisibility;
+    });
+  })();
   </script>
-</body>
-</html>
+  </body>
+  </html>

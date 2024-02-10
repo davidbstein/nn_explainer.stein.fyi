@@ -70,11 +70,13 @@ class Network {
   }
 
   changeLayersButRetainWeights(newHiddenLayerSizes) {
+    const hiddenLayerSizes = newHiddenLayerSizes.concat(this.outputCount);
     const old_layers = this.layers;
     this.layers = [];
     let prevLayerSize = this.inputCount;
-    for (let i = 0; i < newHiddenLayerSizes.length; i++) {
-      const layer = new Layer(newHiddenLayerSizes[i], prevLayerSize);
+    for (let i = 0; i < hiddenLayerSizes.length; i++) {
+      const layer = new Layer(hiddenLayerSizes[i], prevLayerSize);
+      console.log(layer, hiddenLayerSizes[i], prevLayerSize);
       const old_layer = old_layers[i];
       for (let j = 0; j < layer.neurons.length; j++){
         const neuron = layer.neurons[j];
@@ -85,9 +87,7 @@ class Network {
         })
       }
       this.layers.push(layer);
-      prevLayerSize = newHiddenLayerSizes[i];
+      prevLayerSize = hiddenLayerSizes[i];
     }
-    this.layers.push(new Layer(this.outputCount, prevLayerSize));
   }
-
 }

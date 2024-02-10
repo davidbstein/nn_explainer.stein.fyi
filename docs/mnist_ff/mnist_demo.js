@@ -162,7 +162,19 @@ window.onload = async function () {
   function toggleVizMode(event) {
     const toggleButton = event.target;
     document.querySelector("#network").classList.toggle("hide-internals");
+    if (document.querySelector("#network").classList.indexOf("hide-internals") >= 0) {
+      window._INTERNALS_HIDDEN = true;
+    } else {
+      window._INTERNALS_HIDDEN = false;
+    }
   }
+
+  function toggleSpaceViz(event) {
+    const container = document.querySelector("#space-viz-container");
+    container.classList.toggle("minimized");
+    if (window._CONTINUE_RESAMPLE) window._CONTINUE_RESAMPLE = (container.classList.indexOf("minimized") >= 0);
+  }
+
 
   /**
    * START SIMULATOR
@@ -192,6 +204,7 @@ window.onload = async function () {
   /**
    * SETUP BUTTONS
    */
+  document.getElementById('space-viz-toggle').addEventListener("click", toggleSpaceViz);
   document.getElementById('layer-viz-mode-toggle').addEventListener("click", toggleVizMode);
   document.getElementById("pause-training").addEventListener("click", () => window.STOP_SIGNAL = true);
   document.getElementById("load-random-image").addEventListener("click", loadRandomImage);

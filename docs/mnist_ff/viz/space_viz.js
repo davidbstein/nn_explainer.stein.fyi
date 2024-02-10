@@ -1,6 +1,6 @@
 
 const SAMPLE_RATE = 500;
-const SAMPLE_N = 10;
+const SAMPLE_N = 50;
 const RESAMPLE_POINTER = {n: 0}
 /**
  * SPACE VIZ
@@ -59,9 +59,7 @@ async function continueResampleSV(){
     im.vector = imageToVec(im.image, im.label);
     im.projectedVector = undefined;
   }
-  console.log(window.space_viz.images[0].vector);
-  console.log(window.space_viz.images[0].projectedVector);
-  window.space_viz.draw();
+  window.space_viz.draw(false);
   if (window._CONTINUE_RESAMPLE) {
     setTimeout(continueResampleSV, SAMPLE_RATE);
   }
@@ -321,10 +319,11 @@ class SpaceViz {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(width, height);
     this.target.appendChild(this.renderer.domElement);
+    console.log("new 3d scene:", this.scene);
   }
 
 
-  async draw3d(clear = true) {
+  async draw3d(clear = false) {
     if (clear) {
       while (this.scene.children.length > 0) {
         this.scene.remove(this.scene.children[0]);
@@ -337,8 +336,12 @@ class SpaceViz {
     for (let image of this.images) {
       if (!image.projectedVector) {
         image.projectedVector = this.projectVector(image.vector);
+        if (image.sprite) {
+          this.scene.remove(image.sprite);
+          console.log()
+        }
+        this.drawDigit3d(image.image, image.label, image.projectedVector, scale);
       }
-      this.drawDigit3d(image.image, image.label, image.projectedVector, scale);
     }
   }
 
@@ -346,29 +349,35 @@ class SpaceViz {
   drawDigit3d(image, label, projectedVector, scale, useDots=false) {
     const [x, y, z] = projectedVector;
     const [r, g, b] = this.getColor(label);
+    const position = [x * 10 - 5, y * 10 - 5, z * 10 - 5];
+    const newPosition = new THREE.Vector3(...position); // Target position as a
 
-    if (useDots) {
-      const geometry = new THREE.SphereGeometry(scale / 2, 32, 32);
-      const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(r, g, b) });
-      const ball = new THREE.Mesh(geometry, material);
-      material.transparent = true;
-      material.opacity = 0.2;
-      ball.position.set(x * 10 - 5, y * 10 - 5, z * 10 - 5);
-      this.scene.add(ball);
+    if (!image.sprite) {
+      console.log("adding a new image");
+      if (useDots) {
+        const geometry = new THREE.SphereGeometry(scale / 2, 32, 32);
+        const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(r, g, b) });
+        const ball = new THREE.Mesh(geometry, material);
+        material.transparent = true;
+        material.opacity = 0.2;
+        ball.position.set(...position);
+        this.scene.add(sprite);
+        image.sprite = ball;
+      } else {
+        const imageWidth = 28 * scale;
+        const imageHeight = 28 * scale;
+        const texture = new THREE.CanvasTexture(this.imageToCanvas(image, r, g, b, scale));
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        const material = new THREE.SpriteMaterial({ map: texture });
+        const sprite = new THREE.Sprite(material);
+        sprite.scale.set(imageWidth / 10, imageHeight / 10, 1);
+        sprite.position.set(...position);
+        this.scene.add(sprite);
+        image.sprite = sprite;
+      }
     } else {
-      const imageWidth = 28 * scale;
-      const imageHeight = 28 * scale;
-
-      const texture = new THREE.CanvasTexture(this.imageToCanvas(image, r, g, b, scale));
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      const material = new THREE.SpriteMaterial({ map: texture });
-
-      const sprite = new THREE.Sprite(material);
-      sprite.position.set(x * 10 - 5, y * 10 - 5, z * 10 - 5);
-      sprite.scale.set(imageWidth / 10, imageHeight / 10, 1);
-
-      this.scene.add(sprite);
+      this.animateSpritePosition(image.sprite, newPosition);
     }
   }
 
@@ -408,5 +417,29 @@ class SpaceViz {
     this.renderer.render(this.scene, this.camera);
 
     requestAnimationFrame(() => this.animate3D());
+  }
+
+
+  animateSpritePosition(sprite, targetPosition, duration = 1000) {
+    const startPosition = sprite.position.clone();
+    const startTime = performance.now(); // Use high-resolution time if available
+
+    function animate(now) {
+      const elapsedTime = now - startTime;
+      const fraction = elapsedTime / duration;
+
+      if (fraction < 1) {
+        // Linearly interpolate position for the duration of the animation
+        const currentPosition = startPosition.clone().lerp(targetPosition, fraction);
+        sprite.position.set(currentPosition.x, currentPosition.y, currentPosition.z);
+        requestAnimationFrame(animate);
+      } else {
+        sprite.position.set(targetPosition.x, targetPosition.y, targetPosition.z); // Ensure final position
+      }
+
+      // Optionally, update your rendering here if it's not done elsewhere
+    }
+
+    requestAnimationFrame(animate);
   }
 }
