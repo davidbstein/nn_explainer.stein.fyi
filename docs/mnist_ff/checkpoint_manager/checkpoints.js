@@ -51,7 +51,6 @@ function updateCheckpointList(){
 }
 
 function restoreCheckpoint(checkpointID) {
-  const network = window.network;
   let checkpoint = JSON.parse(localStorage.getItem(`checkpoint-${checkpointID}`));
   if (!checkpoint) {
     console.log(`checkpoint ${checkpointID} not found`);
@@ -67,6 +66,45 @@ function restoreCheckpoint(checkpointID) {
   redraw();
 }
 
+async function restorePretrained(preload) {
+  let checkpoint = await restoreNetworkWeightsFromPretrained(preload);
+  const layout = checkpoint.layout.slice(0,-1);
+  document.getElementById("layers-input").value = layout.join(",");
+  window.history.pushState({}, "", `?${layout.join(",")}`);
+  network.changeLayersButRetainWeights(layout);
+  _loadWeightsFromSerialized(checkpoint.layers);
+  redraw();
+}
+
+
+function storeNetworkInLocalStorage(network) {
+  localStorage.setItem("network", JSON.stringify(_serializeNetwork(network)));
+  console.log("STORED");
+}
+
+
+function listPreloads(){
+  return [{
+    size: [10,10,10],
+  }]
+}
+
+
+async function restoreNetworkWeightsFromPretrained(preload){
+  const name = `preload_${preload.size.join("_")}`;
+  importScripts(`./checkpoint_manager/${name}.js`);
+  return await (async function(name){
+    const get_fn = window[name];
+    return get_fn();
+  })(name);
+}
+
+
+function restoreNetworkWeightsFromLocalStorage() {
+  let layers = JSON.parse(localStorage.getItem("network"));
+  return layers;
+}
+
 function _serializeNetwork(network){
   let layers = [];
   for (let i = 0; i < network.layers.length; i++) {
@@ -80,58 +118,4 @@ function _serializeNetwork(network){
     layers.push(layer);
   }
   return layers
-}
-
-function _loadWeightsFromSerialized(layers){
-  let count = 0;
-  if (!layers) return;
-  for (let i = 0; i < network.layers.length; i++) {
-    if (layers.length <= i) continue;
-    for (let j = 0; j < network.layers[i].neurons.length; j++) {
-      if (layers[i].length <= j) continue;
-      count++;
-      const overlapSize = Math.max(layers[i][j].weights.length, network.layers[i].neurons[j].weights.length);
-      for (let k = 0; k < overlapSize; k++) {
-        network.layers[i].neurons[j].weights[k] = layers[i][j].weights[k] || network.layers[i].neurons[j].weights[k];
-      }
-      network.layers[i].neurons[j].bias = layers[i][j].bias;
-    }
-  }
-}
-
-function storeNetworkInLocalStorage() {
-  const network = window.network;
-  localStorage.setItem("network", JSON.stringify(_serializeNetwork(network)));
-  console.log("STORED");
-}
-
-function restoreNetworkWeightsFromLocalStorage(network) {
-  let layers = JSON.parse(localStorage.getItem("network"));
-  _loadWeightsFromSerialized(layers);
-}
-
-function listPreloads(){
-  return [{
-    size: [10,10,10],
-  }]
-}
-
-async function restorePretrained(preload) {
-  const network = window.network;
-  let checkpoint = await restoreNetworkWeightsFromPretrained(preload);
-  const layout = checkpoint.layout.slice(0,-1);
-  document.getElementById("layers-input").value = layout.join(",");
-  window.history.pushState({}, "", `?${layout.join(",")}`);
-  window.network.changeLayersButRetainWeights(layout);
-  _loadWeightsFromSerialized(checkpoint.layers);
-  redraw();
-}
-
-async function restoreNetworkWeightsFromPretrained(preload){
-  const name = `preload_${preload.size.join("_")}`;
-  await load_module(`./checkpoint_manager/${name}.js`);
-  return await (async function(name){
-    const get_fn = window[name];
-    return get_fn();
-  })(name);
 }

@@ -87,7 +87,7 @@ function drawNeuron(target, neuron, output, inputs) {
 }
 
 function drawNeuronInternals(target, neuron, output, inputs) {
-  if (inputs && !window._INTERNALS_HIDDEN) {
+  if (inputs){ // && !window._INTERNALS_HIDDEN) {
     const scaled = inputs.map((weight, idx) => weight * neuron.weights[idx]);
     let inputDiv = document.createElement("div");
     inputDiv.className = "neuron-inputs";
@@ -205,7 +205,7 @@ function getAdjacentPixels(idx){
 /**
  * detect mouseover events on the input image, and update the input image to reflect the mouse position if the mouse is down
  */
-function instrumentInputImage(){
+function instrumentInputImage(callback){
   for (let elem of document.querySelectorAll(".input-pixel")) {
     elem.addEventListener("mouseover", (e) => {
       const mouseDown = window.mouseDown;
@@ -219,7 +219,7 @@ function instrumentInputImage(){
       for (let idx of getAdjacentPixels(pixelIdx)){
         pixelData[idx] = Math.max(0, Math.min(pixelData[idx]+delta, 1));
       }
-      redraw();
+      callback(pixelData);
     });
   }
 }
@@ -258,17 +258,17 @@ function fixScalingIssue(){
  *
  * @param {*} network
  */
-function drawNetwork(network, inputs) {
+function drawNetwork(network, inputs, label) {
   const inputTarget = document.getElementById("input-image");
   const inputLabelTarget = document.getElementById("input-label-value");
   const hiddenTarget = document.getElementById("hidden-layers");
   const outputTarget = document.getElementById("output");
   inputTarget.innerHTML = "";
-  inputLabelTarget.innerHTML = window.currentLabel;
+  inputLabelTarget.innerHTML = label;
   hiddenTarget.innerHTML = "";
   outputTarget.innerHTML = "";
   drawInputImage(inputTarget, inputs);
-  let layerOutputs = network.computeInternals(inputs);
+  let layerOutputs = network.internals;
   for (let i = 0; i < network.layers.length-1; i++) {
     drawHiddenLayer(hiddenTarget, network.layers[i], layerOutputs[i+1], layerOutputs[i]);
   }
@@ -314,29 +314,4 @@ async function updateProgressBar(num, denom, startTime, scores){
 function clearProgressBar(){
   const progressContainer = document.getElementById("progress-container");
   progressContainer.style.display = "none";
-}
-
-// computer accuracy, recall, and f1 score
-function estimateScores() {
-  const sampleSize = 100;
-  let truePositives = 0;
-  let falsePositives = 0;
-  let falseNegatives = 0;
-  let trueNegatives = 0;
-  for (let i = 0; i < sampleSize; i++) {
-    let {image, label} = getRandomImage();
-    let outputs = window.network.computeInternals(image)[window.network.layers.length];
-    let prediction = outputs.indexOf(Math.max(...outputs));
-    if (outputs[prediction] > 0) {
-      // "detection"
-      if (prediction === label) {
-        truePositives++;
-      } else {
-        falsePositives++;
-      }
-    } else {
-      falseNegatives++;
-    }
-  }
-  return ({accuracy: (truePositives + trueNegatives) / sampleSize})
 }

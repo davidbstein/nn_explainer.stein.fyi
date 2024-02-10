@@ -1,3 +1,5 @@
+let METHOD = 'tanh';
+
 class Neuron {
   constructor(inputCount) {
     this.weights = [];
@@ -5,22 +7,23 @@ class Neuron {
       this.weights.push((Math.random() * 2 - 1)/2);
     }
     this.bias = 0;
-    if (window.METHOD=="sigmoid") {
+    if (METHOD=="sigmoid") {
       this.forward= this.forwardSigmoid;
       this.backward= this.backwardSigmoid;
-    } else if (window.METHOD=="relu") {
+    } else if (METHOD=="relu") {
       this.forward = this.forwardReLU;
       this.backward = this.backwardReLU;
-    } else if (window.METHOD=="tanh") {
+    } else if (METHOD=="tanh") {
       this.forward = this.forwardTanh; // Use the forwardTanh activation function
       this.backward = this.backwardTanh; // Use the backwardTanh activation function
     } else {
-      throw new Error("Invalid window.METHOD");
+      throw new Error("Invalid METHOD");
     }
   }
 
   forwardTanh(inputs) {
     // tanh activation function
+    // if you forgot to serialize the network, this is the line that shows up in the logs, because it's the first function to be unserializable.
     let sum = 0;
     for (let i = 0; i < inputs.length; i++) {
       sum += inputs[i] * this.weights[i];
