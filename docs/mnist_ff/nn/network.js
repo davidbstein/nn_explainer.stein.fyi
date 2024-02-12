@@ -90,4 +90,18 @@ class Network {
       prevLayerSize = hiddenLayerSizes[i];
     }
   }
+
+  chageWeightsButRetainLayers(newLayers) {
+    for (let i = 0; i < this.layers.length; i++) {
+      const layer = this.layers[i];
+      const newLayer = newLayers[i];
+      for (let n=0; n < layer.neurons.length; n++) {
+        const neuron = layer.neurons[n];
+        for (let w=0; w<neuron.weights.length; w++) {
+          neuron.weights[w] = newLayer?.[n]?.weights?.[w] || neuron.weights[w];
+        }
+        neuron.bias = newLayer?.[n]?.bias || neuron.bias;
+      }
+    }
+  }
 }

@@ -7,7 +7,7 @@ body {
   color: white;
   font-family: sans-serif;
 }
-#network {
+#network-container {
   position: relative;
   border: 1px solid #ccc;
   display: flex;
@@ -42,10 +42,11 @@ body {
   flex-wrap: wrap;
 }
 
-#network > div {
+#network-container > div {
 }
 #input-image {
   cursor: crosshair;
+  max-height: 670px;
 }
 #input-image .input-row {
   display: flex;
@@ -55,9 +56,52 @@ body {
 #input-image .input-row .input-pixel {
   width: .5em;
   height: .5em;
+  padding: calc(.1em + 1px);
+  position: relative;
+  z-index: 0;
+}
+
+#input-image .input-row .input-pixel::after {
+  content: "";
+  border-radius: .5em;
+  border: 1px solid gray;
+  position: absolute;
+  width: 0.6em;
+  height: .6em;
+  top: 0;
+  left: 0;
+  background: var(--bgColor);
+}
+/*
+#input-image .input-row .input-pixel {
+  width: .5em;
+  height: .5em;
   border: 1px solid #888;
   border-radius: .5em;
   margin: .1em;
+  position: relative;
+  z-index: 0;
+}
+*/
+#input-image .input-row .input-pixel:hover {
+  z-index: 1;
+}
+
+#input-image .input-row .input-pixel:hover::before {
+  content: "";
+  background: black;
+  height: 2.45em;
+  width: 2.45em;
+  position: absolute;
+  top: -0.95em;
+  left: -0.95em;
+  opacity: .5;
+  pointer-events: none;
+  box-shadow: 0 0 .3em .1em black;
+}
+#input-image.draw-mode .input-row .input-pixel:hover::before {
+  background: white;
+  box-shadow: 0 0 .3em .1em white;
 }
 
 #input-container {
@@ -70,13 +114,14 @@ body {
 }
 
 #all-layers {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 3em;
-    max-height: calc(100% - 8em);
-    position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3em;
+  max-height: calc(100% - 8em);
+  position: relative;
+  flex-grow: 1;
 }
 
 #hidden-layers-container {

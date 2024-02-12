@@ -9,7 +9,7 @@ let network;
 let currentInput;
 let currentLabel;
 let currentDigits = [0,1,2,3,4,5,6,7,8,9];
-let OVERRIDE_RATE = 2.5;
+let OVERRIDE_RATE = 1.0;
 let STOP_SIGNAL = false;
 // Handler for messages received from the main thread
 self.onmessage = async function(event) {
@@ -38,6 +38,12 @@ self.onmessage = async function(event) {
     case 'requestVectors':
       getVectors(data.images);
       break;
+    case 'changeWeights':
+
+      break;
+    case 'changeWeights':
+
+      break;
     case 'loadSavedNetwork':
       loadSavedNetwork(data.layers);
       break;
@@ -48,25 +54,41 @@ self.onmessage = async function(event) {
       console.warn("STOPPED");
       STOP_SIGNAL = true;
       break;
+    case 'chageLayersButRetainWeights':
+      changeLayersButRetainWeights(data.layers);
+      break;
+    case 'changeNetwork':
+      initializeNetwork(data);
+      break
   }
 };
 
 
 function initializeNetwork(data){
+  console.log(data);
   network = new Network(data.inputCount, data.hiddenLayerSizes, data.outputCount);
+  network.chageWeightsButRetainLayers(data.layers);
   const randomImage = getRandomImage();
   currentInput = randomImage.image;
   currentLabel = randomImage.label;
   self.postMessage({
-    type: 'networkReady',
-    data: {network: serializeNetworkForFrontend(network), inputs: currentInput, label: currentLabel}
+    type: 'networkLoaded',
+    data: {
+      network: serializeNetworkForFrontend(network), 
+      inputs: currentInput, 
+      label: currentLabel
+    }
   });
 }
 
 function broadcastNetworkUpdate(){
   self.postMessage({
     type: 'networkReady',
-    data: {network: serializeNetworkForFrontend(network), inputs: currentInput, label: currentLabel}
+    data: {
+      network: serializeNetworkForFrontend(network), 
+      inputs: currentInput, 
+      label: currentLabel
+    }
   });
 }
 
@@ -92,6 +114,10 @@ function dampenWeights(){
   broadcastNetworkUpdate();
 }
 
+function changeLayersButRetainWeights(layers){
+  network.changeLayersButRetainWeights(layers);
+  broadcastNetworkUpdate();
+}
 
 async function broadcastProgressUpdate(num, denom, startTime, scores, step){
   self.postMessage({
@@ -103,7 +129,11 @@ async function broadcastProgressUpdate(num, denom, startTime, scores, step){
 function broadcastTrainingComplete(){
   self.postMessage({
     type: 'trainingRoundComplete',
-    data: {network: serializeNetworkForFrontend(network), inputs: currentInput, label: currentLabel}
+    data: {
+      network: serializeNetworkForFrontend(network), 
+      inputs: currentInput, 
+      label: currentLabel
+    }
   });
 }
 

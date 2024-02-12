@@ -236,7 +236,7 @@ function drawInputImage(target, pixelData) {
       let pixel = document.createElement("div");
       pixel.className = "input-pixel";
       pixel.dataset.pixelidx = i * 28 + j;
-      pixel.style.backgroundColor = `rgb(${pixelData[i * 28 + j] * 255}, ${pixelData[i * 28 + j] * 255}, ${pixelData[i * 28 + j] * 255})`;
+      pixel.style = `--bgColor: rgb(${pixelData[i * 28 + j] * 255}, ${pixelData[i * 28 + j] * 255}, ${pixelData[i * 28 + j] * 255})`;
       row.appendChild(pixel);
     }
     target.appendChild(row);
@@ -249,7 +249,16 @@ function fixScalingIssue(){
     const ratio = .9 * boxHeight / layerDiv.clientHeight;
     if (ratio < 1) layerDiv.style.transform = `scale(${ratio})`;
   }
+  const outBoxHeight = document.getElementById("hidden-layers-container").clientHeight;
+  for (let layerDiv of document.querySelectorAll("#output")) {
+    const ratio = .9 * outBoxHeight / layerDiv.clientHeight;
+    if (ratio < 1) layerDiv.style.transform = `scale(${ratio})`;
+
+  }
 }
+
+window.addEventListener("resize", fixScalingIssue);
+
 
 /**
  * draw the input layer into the #input-image div,

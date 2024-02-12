@@ -1,17 +1,20 @@
 //load_module("./ff_nn.js")
 load_module("./checkpoint_manager/checkpoints.js")
 load_module("./viz/viz.js")
-load_module("./viz/space_viz.js")
+load_module("./viz/space_viz_manager.js")
 const networkWorker = new Worker('networkWorker.js');
 
 
 window.onload = async function () {
+  let network;
 
   networkWorker.onmessage = function(event) {
     const { type, data } = event.data;
     console.debug("front-end received:", type, data);
     switch (type) {
+      case 'networkLoaded':
       case 'networkReady':
+        network = data.network;
         updateNetworkViz(data.network, data.inputs, data.label);
         break;
       case 'trainingProgressUpdate':
@@ -34,6 +37,34 @@ window.onload = async function () {
         break;
     }
   };
+
+  window.addEventListener(
+    "loadNewNetworkWeights",
+    (e) => {
+      const layers = e.detail.layers;
+      networkWorker.postMessage({
+        type: 'changeWeights',
+        data: { layers }
+      });
+    },
+  );
+
+  window.addEventListener(
+    "loadNewNetwork",
+    (e) => {
+      //data.inputCount, data.hiddenLayerSizes, data.outputCount
+      const network = e.detail.network;
+      networkWorker.postMessage({
+        type: 'changeNetwork',
+        data: { 
+          inputCount: network.layers[0][0].weights.length,
+          hiddenLayerSizes: network.layout.slice(0,-1),
+          outputCount: network.layers[network.layers.length-1].length,
+          layers: network.layers,
+        }
+      });
+    },
+  );
 
   function startTraining(n, batchSize) {
     document.getElementById("pause-training").hidden = false;
@@ -76,7 +107,7 @@ window.onload = async function () {
   }
 
   function resetWeights(){
-     networkWorker.postMessage({
+    networkWorker.postMessage({
       type: 'requestReset'
     });
   }
@@ -88,7 +119,8 @@ window.onload = async function () {
   function updateWeights(n) {
     for (let i = 0; i < n; i++) {
       let learningRate = window.LEARNING_RATE;
-      network.backward(window.currentInput, window.currentLabel, learningRate);
+      alert("FIXME mnist_demo.js:updateWeights(n)")
+      //network.backward(window.currentInput, window.currentLabel, learningRate);
     }
     redraw();
   }
@@ -102,10 +134,12 @@ window.onload = async function () {
   function loadNewLayers() {
     const layers = document.getElementById("layers-input").value.split(",").map(x => parseInt(x));
     window.history.pushState({}, "", `?${layers.join(",")}`);
-    network.changeLayersButRetainWeights(layers);
+    networkWorker.postMessage({
+      type: 'chageLayersButRetainWeights',
+      data: {layers}
+    });
     document.getElementById("layers-input").classList.remove("changed");
     document.getElementById("set-layers").disabled = true;
-    redraw();
   }
 
   function loadRandomImage(){
@@ -154,12 +188,18 @@ window.onload = async function () {
     window.drawMode = !window.drawMode;
     const button = document.getElementById("draw-erase-toggle");
     button.innerHTML = window.drawMode ? "draw mode" : "erase mode";
+    const imageContainer = document.getElementById("input-image");
+    if (window.drawMode) {
+      imageContainer.classList.add("draw-mode");
+    } else {
+      imageContainer.classList.remove("draw-mode");
+    }
   }
 
   function toggleVizMode(event) {
     const toggleButton = event.target;
-    document.querySelector("#network").classList.toggle("hide-internals");
-    if (document.querySelector("#network").classList.contains("hide-internals") >= 0) {
+    document.querySelector("#network-container").classList.toggle("hide-internals");
+    if (document.querySelector("#network-container").classList.contains("hide-internals") >= 0) {
       window._INTERNALS_HIDDEN = true;
     } else {
       window._INTERNALS_HIDDEN = false;
@@ -202,28 +242,58 @@ window.onload = async function () {
       inputCount: 784,
       hiddenLayerSizes: layers,
       outputCount: 10,
-      layers: restoreNetworkWeightsFromLocalStorage()
+      layers: CheckpointManager.restoreNetworkWeightsFromLocalStorage()
     }
   });
 
   /**
    * SETUP BUTTONS
    */
-  document.getElementById('space-viz-toggle').addEventListener("click", toggleSpaceViz);
-  document.getElementById('layer-viz-mode-toggle').addEventListener("click", toggleVizMode);
-  document.getElementById("pause-training").addEventListener("click", pauseTraining);
-  document.getElementById("load-random-image").addEventListener("click", loadRandomImage);
-  document.getElementById("clear-image").addEventListener("click", clearImage);
-  document.getElementById("reset-weights").addEventListener("click", resetWeights);
-  document.getElementById("dampen-weights").addEventListener("click", dampenWeights);
-  document.getElementById("training-rate").addEventListener("input", trainingRateChanged);
-  document.getElementById("update-weights").addEventListener("click", () => updateWeights(1));
-  document.getElementById("update-weights-1000").addEventListener("click", () => updateWeights(10000));
-  document.getElementById("train-1").addEventListener("click", () => train(1));
-  document.getElementById("train-1000").addEventListener("click", () => train(10000));
-  document.getElementById("train-100k").addEventListener("click", () => train(100000));
-  document.getElementById("train-1m").addEventListener("click", () => train(100000000));
-  document.getElementById("draw-erase-toggle").addEventListener("click", toggleDrawErase);
+  document.getElementById('space-viz-toggle').addEventListener("click", 
+    toggleSpaceViz
+  );
+  document.getElementById('layer-viz-mode-toggle').addEventListener("click", 
+    toggleVizMode
+  );
+  document.getElementById("pause-training").addEventListener("click", 
+    pauseTraining
+  );
+  document.getElementById("load-random-image").addEventListener("click", 
+    loadRandomImage
+  );
+  document.getElementById("clear-image").addEventListener("click", 
+    clearImage
+  );
+  document.getElementById("reset-weights").addEventListener("click", 
+    resetWeights
+  );
+  document.getElementById("dampen-weights").addEventListener("click", 
+    dampenWeights
+  );
+  document.getElementById("training-rate").addEventListener("input", 
+    trainingRateChanged
+  );
+  document.getElementById("update-weights").addEventListener("click", 
+    () => updateWeights(1)
+  );
+  document.getElementById("update-weights-1000").addEventListener("click", 
+    () => updateWeights(10000)
+  );
+  document.getElementById("train-1").addEventListener("click", 
+    () => train(1)
+  );
+  document.getElementById("train-1000").addEventListener("click", 
+    () => train(10000)
+  );
+  document.getElementById("train-100k").addEventListener("click", 
+    () => train(100000)
+  );
+  document.getElementById("train-1m").addEventListener("click", 
+    () => train(100000000)
+  );
+  document.getElementById("draw-erase-toggle").addEventListener("click", 
+    toggleDrawErase
+  );
   document.querySelectorAll("input[name=digit]").forEach((elem) => {
     elem.addEventListener("change", updateCurrentDigits);
   });
@@ -248,10 +318,14 @@ window.onload = async function () {
       loadNewLayers();
     }
   }
-  document.getElementById("set-layers").addEventListener("click", loadNewLayers);
-  document.getElementById("save-checkpoint").addEventListener("click", () => saveCheckpoint());
-  updateCheckpointList();
+  document.getElementById("set-layers").addEventListener("click", 
+    loadNewLayers
+  );
+  document.getElementById("save-checkpoint").addEventListener("click", 
+    () => CheckpointManager.saveCheckpoint(network)
+  );
+  CheckpointManager.updateCheckpointList();
 
-  await setSV(2);
-  loadSpaceViz();
+  await SpaceVizManager.setSV(2);
+  SpaceVizManager.loadSpaceViz();
 }

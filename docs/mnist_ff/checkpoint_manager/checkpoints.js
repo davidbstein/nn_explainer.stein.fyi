@@ -1,122 +1,142 @@
 
-function saveCheckpoint() {
-  alert("TODO: copy over over localstorage");
-  console.log("saved!");
-  const layers = _serializeNetwork(network);
-  const checkpointID = Date.now();
-  const layout = network.layers.map(layer => layer.neurons.length);
-  const checkpoint = {
-    id: checkpointID,
-    layout: layout,
-    layers: layers
-  };
-  localStorage.setItem(`checkpoint-${checkpointID}`, JSON.stringify(checkpoint));
-  updateCheckpointList();
-}
+const CheckpointManager = {
 
-function listCheckpoints() {
-  let checkpoints = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    let key = localStorage.key(i);
-    if (key.startsWith("checkpoint-")) {
-      checkpoints.push(JSON.parse(localStorage.getItem(key)));
+  saveCheckpoint: (network) =>  {
+    console.log(network);
+    const layers = CheckpointManager._serializeNetwork(network);
+    const checkpointID = Date.now();
+    const layout = network.layers.map(layer => layer.neurons.length);
+    const checkpoint = {
+      id: checkpointID,
+      layout: layout,
+      layers: layers
+    };
+    localStorage.setItem(`checkpoint-${checkpointID}`, JSON.stringify(checkpoint));
+    CheckpointManager.updateCheckpointList();
+  },
+
+  listCheckpoints: () => {
+    let checkpoints = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      let key = localStorage.key(i);
+      if (key.startsWith("checkpoint-")) {
+        checkpoints.push(JSON.parse(localStorage.getItem(key)));
+      }
     }
-  }
-  return checkpoints;
-}
+    return checkpoints;
+  },
 
-function _formatCheckpoint(checkpoint) {
-  const date = new Date(checkpoint.id)
-  const localtime = date.toLocaleTimeString();
-  const localdate = date.toLocaleDateString();
-  return `${localdate} -- [${checkpoint.layout.slice(0,-1).join(",")}] <!-- ${checkpoint?.id} -->`;
-}
-
-function updateCheckpointList(){
-  const checkpointDiv = document.getElementById("checkpoints");
-  checkpointDiv.innerHTML = "";
-  for (let checkpoint of listCheckpoints()) {
-    const button = document.createElement("button");
-    // checkpoint.id is a timestamp, convert to isodate
-    button.innerHTML = _formatCheckpoint(checkpoint);
-    button.addEventListener("click", () => restoreCheckpoint(checkpoint.id));
-    checkpointDiv.appendChild(button);
-  }
-  for (let preload of listPreloads()) {
-    const button = document.createElement("button");
-    // checkpoint.id is a timestamp, convert to isodate
-    button.innerHTML = `Pretrained network: ${preload.size.join("x")}`;
-    button.addEventListener("click", () => restorePretrained(preload));
-    checkpointDiv.appendChild(button);
-  }
-}
-
-function restoreCheckpoint(checkpointID) {
-  let checkpoint = JSON.parse(localStorage.getItem(`checkpoint-${checkpointID}`));
-  if (!checkpoint) {
-    console.log(`checkpoint ${checkpointID} not found`);
-    return;
-  }
-  console.log("restoring", checkpoint);
-  const layout = checkpoint.layout.slice(0,-1);
-  document.getElementById("layers-input").value = layout.join(",");
-  window.history.pushState({}, "", `?${layout.join(",")}`);
-  network.changeLayersButRetainWeights(layout);
-  _loadWeightsFromSerialized(checkpoint.layers);
-  console.log(`RESTORED checkpoint ${checkpointID}`);
-  redraw();
-}
-
-async function restorePretrained(preload) {
-  let checkpoint = await restoreNetworkWeightsFromPretrained(preload);
-  const layout = checkpoint.layout.slice(0,-1);
-  document.getElementById("layers-input").value = layout.join(",");
-  window.history.pushState({}, "", `?${layout.join(",")}`);
-  network.changeLayersButRetainWeights(layout);
-  _loadWeightsFromSerialized(checkpoint.layers);
-  redraw();
-}
-
-
-function storeNetworkInLocalStorage(network) {
-  localStorage.setItem("network", JSON.stringify(_serializeNetwork(network)));
-  console.log("STORED");
-}
-
-
-function listPreloads(){
-  return [{
-    size: [10,10,10],
-  }]
-}
-
-
-async function restoreNetworkWeightsFromPretrained(preload){
-  const name = `preload_${preload.size.join("_")}`;
-  importScripts(`./checkpoint_manager/${name}.js`);
-  return await (async function(name){
-    const get_fn = window[name];
-    return get_fn();
-  })(name);
-}
-
-
-function restoreNetworkWeightsFromLocalStorage() {
-  let layers = JSON.parse(localStorage.getItem("network"));
-  return layers;
-}
-
-function _serializeNetwork(network){
-  let layers = [];
-  for (let i = 0; i < network.layers.length; i++) {
-    let layer = [];
-    for (let j = 0; j < network.layers[i].neurons.length; j++) {
-      layer.push({
-        weights: network.layers[i].neurons[j].weights,
-        bias: network.layers[i].neurons[j].bias
-      });
+  updateCheckpointList: () => {
+    const checkpointDiv = document.getElementById("checkpoints");
+    checkpointDiv.innerHTML = "";
+    for (let checkpoint of CheckpointManager.listCheckpoints()) {
+      const button = document.createElement("button");
+      // checkpoint.id is a timestamp, convert to isodate
+      button.innerHTML = CheckpointManager._formatCheckpoint(checkpoint);
+      button.addEventListener("click", () => CheckpointManager.restoreCheckpoint(checkpoint.id));
+      checkpointDiv.appendChild(button);
     }
-    layers.push(layer);
+    for (let preload of CheckpointManager.listPreloads()) {
+      const button = document.createElement("button");
+      // checkpoint.id is a timestamp, convert to isodate
+      button.innerHTML = `Pretrained network: ${preload.size.join("x")}`;
+      button.addEventListener("click", () => CheckpointManager.restorePretrained(preload));
+      checkpointDiv.appendChild(button);
+    }
+  },
+
+  restoreCheckpoint: (checkpointID) =>  {
+    let checkpoint = JSON.parse(localStorage.getItem(`checkpoint-${checkpointID}`));
+    if (!checkpoint) {
+      console.log(`checkpoint ${checkpointID} not found`);
+      return;
+    }
+    console.log("restoring", checkpoint);
+    const layerSizes = checkpoint.layout.slice(0,-1).join(",");
+    document.getElementById("layers-input").value = layerSizes;
+    window.history.pushState({}, "", `?${layerSizes}`);
+    CheckpointManager._emitNewNetwork(checkpoint);
+    //_loadWeightsFromSerialized();
+  },
+
+  restorePretrained: async function (preload) {
+    let checkpoint = await CheckpointManager.restoreNetworkWeightsFromPretrained(preload);
+    const layout = checkpoint.layout.slice(0,-1);
+    document.getElementById("layers-input").value = layout.join(",");
+    window.history.pushState({}, "", `?${layout.join(",")}`);
+    network.changeLayersButRetainWeights(layout);
+    CheckpointManager._loadWeightsFromSerialized(checkpoint.layers);
+    redraw();
+  },
+
+
+  storeNetworkInLocalStorage: (network) =>  {
+    localStorage.setItem("network", JSON.stringify(CheckpointManager._serializeNetwork(network)));
+    console.log("STORED");
+  },
+
+
+  listPreloads: () => {
+    return [{
+      size: [10,10,10],
+    }]
+  },
+
+
+  restoreNetworkWeightsFromPretrained: async function (preload){
+    const name = `preload_${preload.size.join("_")}`;
+    importScripts(`./checkpoint_manager/${name}.js`);
+    return await (async function(name){
+      const get_fn = window[name];
+      return get_fn();
+    })(name);
+  },
+
+
+  restoreNetworkWeightsFromLocalStorage: () =>  {
+    let layers = JSON.parse(localStorage.getItem("network"));
+    return layers;
+  },
+
+  _formatCheckpoint: (checkpoint) =>  {
+    const date = new Date(checkpoint.id)
+    const localtime = date.toLocaleTimeString();
+    const localdate = date.toLocaleDateString();
+    return `${localdate} -- [${checkpoint.layout.slice(0,-1).join(",")}] <!-- ${checkpoint?.id} -->`;
+  },
+
+  _emitNewWeights: async function(layers) {
+    window.setTimeout(()=> {
+      console.log("emitting event loadNewNetworkWeights", layers);
+      window.dispatchEvent(new CustomEvent(
+        "loadNewNetworkWeights", 
+        { detail: {layers} }
+      ));
+    }, 0);
+  },
+
+  _emitNewNetwork: async function(network) {
+    window.setTimeout(()=> {
+      console.log("emitting event loadNewNetwork", network);
+      window.dispatchEvent(new CustomEvent(
+        "loadNewNetwork", 
+        { detail: {network} }
+      ));
+    }, 0);
+  },
+
+  _serializeNetwork: (network) => {
+    let layers = [];
+    for (let i = 0; i < network.layers.length; i++) {
+      let layer = [];
+      for (let j = 0; j < network.layers[i].neurons.length; j++) {
+        layer.push({
+          weights: network.layers[i].neurons[j].weights,
+          bias: network.layers[i].neurons[j].bias
+        });
+      }
+      layers.push(layer);
+    }
+    return layers
   }
-  return layers
 }
