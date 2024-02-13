@@ -92,6 +92,7 @@ class Network {
   }
 
   chageWeightsButRetainLayers(newLayers) {
+    if (!newLayers) return;
     for (let i = 0; i < this.layers.length; i++) {
       const layer = this.layers[i];
       const newLayer = newLayers[i];

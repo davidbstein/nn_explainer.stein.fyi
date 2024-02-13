@@ -47,6 +47,13 @@ function drawNeuronWeights(target, weights, width, height, color_1=[0,255,0], co
   return canvas;
 }
 
+function drawNeuronGradients(loss, gradients){
+  // loss is a number
+  // gradients is of form [{weight_grads: (784), bias_grad: n}, ...]
+  // works with drawNeuronWeights(target, weight_grads, width, height, ...)
+  console.log("TODO: draw backprop")
+}
+
 /**
  * draw a neuron into the target div
  * the neuron is represented as a neuron of the "neuron-weight" class and a neuron of the "neuron-output" class

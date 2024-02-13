@@ -2,7 +2,7 @@
 load_module("./checkpoint_manager/checkpoints.js")
 load_module("./viz/viz.js")
 load_module("./viz/space_viz_manager.js")
-const networkWorker = new Worker('networkWorker.js');
+const networkWorker = new Worker('./networkWorker.js');
 
 
 window.onload = async function () {
@@ -23,7 +23,7 @@ window.onload = async function () {
       case 'trainingRoundComplete':
         clearProgressBar();
         disableButtons(false);
-        storeNetworkInLocalStorage(data.network);
+        CheckpointManager.storeNetworkInLocalStorage(data.network);
         document.getElementById("pause-training").hidden = true;
         break;
       case 'batchComplete':
@@ -34,6 +34,8 @@ window.onload = async function () {
       case 'spaceVizImageData':
         break;
       case 'spaceVizVectorData':
+        break;
+      case 'currentBackpropData':
         break;
     }
   };
@@ -116,13 +118,18 @@ window.onload = async function () {
       type: 'requestDampen'
     });
   }
-  function updateWeights(n) {
-    for (let i = 0; i < n; i++) {
-      let learningRate = window.LEARNING_RATE;
-      alert("FIXME mnist_demo.js:updateWeights(n)")
-      //network.backward(window.currentInput, window.currentLabel, learningRate);
-    }
-    redraw();
+  // function updateWeights(n) {
+  //   for (let i = 0; i < n; i++) {
+  //     let learningRate = window.LEARNING_RATE;
+  //     alert("FIXME mnist_demo.js:updateWeights(n)")
+  //     //network.backward(window.currentInput, window.currentLabel, learningRate);
+  //   }
+  //   redraw();
+  // }
+  function computeBackprop(){
+    networkWorker.postMessage({
+      type: 'requestBackProp'
+    });
   }
 
   function trainingRateChanged(event) {
@@ -235,7 +242,6 @@ window.onload = async function () {
   if (window.location.search) {
     layers = window.location.search.substring(1).split(",").map(x => parseInt(x));
   }
-
   networkWorker.postMessage({
     type: 'initialize',
     data: {
@@ -309,6 +315,9 @@ window.onload = async function () {
     }
     updateCurrentDigits();
   });
+  document.getElementById('backprop-button').addEventListener("click",
+    computeBackprop
+  );
 
   document.getElementById("layers-input").placeholder = `comma-seporated layers (e.g., ${layers.join(",")})`;
   document.getElementById("layers-input").value = `${layers.join(",")}`;

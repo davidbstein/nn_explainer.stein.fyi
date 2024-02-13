@@ -1,6 +1,12 @@
 
 const CheckpointManager = {
 
+  listPreloads: () => {
+    return [{
+      size: [10,10,10],
+    }]
+  },
+
   saveCheckpoint: (network) =>  {
     console.log(network);
     const layers = CheckpointManager._serializeNetwork(network);
@@ -64,9 +70,7 @@ const CheckpointManager = {
     const layout = checkpoint.layout.slice(0,-1);
     document.getElementById("layers-input").value = layout.join(",");
     window.history.pushState({}, "", `?${layout.join(",")}`);
-    network.changeLayersButRetainWeights(layout);
-    CheckpointManager._loadWeightsFromSerialized(checkpoint.layers);
-    redraw();
+    CheckpointManager._emitNewNetwork(checkpoint);
   },
 
 
@@ -75,21 +79,12 @@ const CheckpointManager = {
     console.log("STORED");
   },
 
-
-  listPreloads: () => {
-    return [{
-      size: [10,10,10],
-    }]
-  },
-
-
   restoreNetworkWeightsFromPretrained: async function (preload){
     const name = `preload_${preload.size.join("_")}`;
-    importScripts(`./checkpoint_manager/${name}.js`);
-    return await (async function(name){
-      const get_fn = window[name];
-      return get_fn();
-    })(name);
+    load_module(`./checkpoint_manager/${name}.js`);
+    await delay(0);
+    const get_fn = window[name];
+    return get_fn();
   },
 
 
@@ -139,4 +134,9 @@ const CheckpointManager = {
     }
     return layers
   }
+}
+
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

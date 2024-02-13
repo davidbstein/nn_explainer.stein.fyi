@@ -59,7 +59,10 @@ self.onmessage = async function(event) {
       break;
     case 'changeNetwork':
       initializeNetwork(data);
-      break
+      break;
+    case 'requestBackProp':
+      computeBackpropScores();
+      break;
   }
 };
 
@@ -137,6 +140,13 @@ function broadcastTrainingComplete(){
   });
 }
 
+function computeBackpropScores(){
+  self.postMessage({
+    type: 'currentBackpropData',
+    data: getBackProp(network, currentInput, currentLabel),
+  });
+}
+
 /** SPACE VIZ **/
 
 function getImages(n){
@@ -211,7 +221,6 @@ async function trainBatched(n, batchSize=100, randomizeImages=true, update_step=
     broadcastProgressUpdate(i*batchSize, n*batchSize, startTime, scores, i);
     await doBatch(network, batchSize, imageGetter);
     await delay(0); // necessary to allow for interrupt with STOP_SIGNAL, this add the continuation to the queue.
-    console.log(STOP_SIGNAL);
     if (STOP_SIGNAL) {
       STOP_SIGNAL = false;
       console.warn("Stop signal received");
@@ -268,7 +277,44 @@ async function doBatch(network, batchSize, imageGetter) {
   });
 }
 
+function getBackProp(network, input, label) {
+  // Initialize gradients for "batch" processing
+  network.layers.forEach(layer => {
+    layer.neurons.forEach(neuron => {
+      neuron.weightGradientsSum = new Array(neuron.weights.length).fill(0);
+      neuron.biasGradientSum = 0;
+    });
+  });
 
+  // Backward pass, accumulate gradients
+  let outputs = network.computeInternals(input);
+  let outputGradients = [];
+  for (let k = 0; k < outputs[outputs.length - 1].length; k++) {
+    const output = outputs[outputs.length - 1][k];
+    const target = k === label ? 1 : 0;
+    outputGradients.push((output - target) * (output > 0 ? 1 : 0));
+  }
+  const loss = outputGradients.reduce((sum, gradient) => sum + gradient ** 2, 0) / 2;
+  for (let k = network.layers.length - 1; k >= 0; k--) {
+    const layer = network.layers[k];
+    // NOTE: the `true` in the following line means accumulate gradients, don't apply them
+    outputGradients = layer.backward(outputs[k], outputGradients, null/*learning rate*/, true);
+  }
+  const to_ret = []
+  network.layers.forEach((layer) => {
+    const ret_layer = [];
+    to_ret.push(ret_layer);
+    layer.neurons.forEach((neuron) => {
+      ret_layer.push({
+        weight_grads: neuron.weightGradientsSum,
+        bias_grad: neuron.biasGradientSum,
+      })
+    });
+  });
+  return {
+    loss:loss, gradients:to_ret
+  };
+}
 
 /* STORAGE */
 

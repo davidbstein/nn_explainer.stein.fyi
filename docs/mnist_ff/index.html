@@ -27,7 +27,7 @@
       </div>
     </div>
     <div id="hidden-layers-container">
-      <div>Hidden Layers</div>
+      <div><!--Hidden Layers--></div>
       <div id="all-layers">
         <div id="hidden-layers"></div>
         <div id="output"></div>
@@ -114,9 +114,10 @@
         </div>
       </div>
       <div class="buttons">
-        <div class="button-label"> Adjust Hyperparameters </div>
+        <div class="button-label"> Hyperparameters </div>
         <div class="buttons-container">
           <button id="dampen-weights">DAMPEN</button>
+          <button id='backprop-button'> gradients </button>
           <div>Training Rate: <span id="training-rate-label">1</span></div>
           <input type="range" id="training-rate" name="volume" min="0" max="500" value="10" />
         </div>
