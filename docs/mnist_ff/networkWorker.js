@@ -33,13 +33,10 @@ self.onmessage = async function(event) {
       dampenWeights();
       break;
     case 'requestImages':
-      getImages(data.n);
+      getSVImages(data.n);
       break;
     case 'requestVectors':
       getVectors(data.images);
-      break;
-    case 'changeWeights':
-
       break;
     case 'changeWeights':
 
@@ -149,7 +146,7 @@ function computeBackpropScores(){
 
 /** SPACE VIZ **/
 
-function getImages(n){
+function getSVImages(n){
   const images = [];
   for (let i = 0; i++<n;){
     images.push(getRandomImage());
@@ -158,6 +155,18 @@ function getImages(n){
     type: 'spaceVizImageData',
     data: {images}
   });
+}
+
+function imageToSVVec(input) {
+  const outputs = network.computeInternals(input);
+  let layer = null;
+  for (let i = 0; i < outputs.length; i++) {
+    let currentLayer = outputs[i];
+    if (layer === null || currentLayer.length <= layer.length) {
+      layer = currentLayer;
+    }
+  }
+  return layer;
 }
 
 function getVectors(images){
@@ -358,6 +367,16 @@ function getCurrentImage() {
   }
 }
 
+function getImageByIndex(index){
+  const im = MNIST_TEST[index].image.map((x)=>x/255);
+  return {
+    image: im,
+    label: MNIST_TEST[index].label,
+    index: index,
+    vec: imageToSVVec(im)
+  }
+}
+
 function getRandomImage() {
   const validDigits = currentDigits;
   if (validDigits.length === 0) {
@@ -370,11 +389,7 @@ function getRandomImage() {
   while (!validDigits.includes(MNIST_TEST[index].label)) {
     index = Math.floor(Math.random() * MNIST_TEST.length);
   }
-  const im = MNIST_TEST[index].image.map((x)=>x/255);
-  return {
-    image: im,
-    label: MNIST_TEST[index].label
-  }
+  return getImageByIndex(index);
 }
 
 

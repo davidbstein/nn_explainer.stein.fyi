@@ -98,11 +98,12 @@ class SpaceViz {
    * @param {*} y the y coordinate of the image, between 0 and 1
    * @param {*} scale the scale of the image, between 0 and 1, default to 1
    */
-  addDigit(image, label, vector) {
+  addDigit(index, image, label, vector) {
     const to_add = {
       image: image,
       label: label,
       vector: vector,
+      index: index,
     };
     this.images.push(to_add);
   }

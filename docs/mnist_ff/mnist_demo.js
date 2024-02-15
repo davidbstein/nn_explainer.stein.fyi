@@ -33,8 +33,10 @@ window.onload = async function () {
       case 'imageReady':
         break;
       case 'spaceVizImageData':
+        processSpaceVizImageData(data);
         break;
       case 'spaceVizVectorData':
+        processSpaceVizVectorData(data);
         break;
       case 'currentBackpropData':
         showBackprop(data);
@@ -155,6 +157,16 @@ window.onload = async function () {
     networkWorker.postMessage({
       type: 'requestRandomImage',
     });
+  }
+
+  function processSpaceVizImageData(data){
+    for (let im of data.images) {
+      SpaceVizManager.addSVDigit(should_redraw, im.index, im.image, im.label, im.vec);
+    }
+  }
+
+  function processSpaceVizVectorData(data){
+    SpaceVizManager.continueResampleSV(data.vecsToUpdate);
   }
 
   function disableButtons(disable){

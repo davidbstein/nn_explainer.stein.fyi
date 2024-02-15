@@ -1,18 +1,9 @@
 load_module("./viz/space_viz.js")
 
 const SpaceVizManager = {
-  imageToVec: (input, label) => {
-    const outputs = network.computeInternals(input);
-    let layer = null;
-    for (let i = 0; i < outputs.length; i++) {
-      let currentLayer = outputs[i];
-      if (layer === null || currentLayer.length <= layer.length) {
-        layer = currentLayer;
-      }
-    }
-    return layer;
-  },
+/*
 
+*/
   setSV: (dims) => {
     if (SpaceVizManager.space_viz) {
       delete SpaceVizManager.space_viz; //TODO: almost cert
@@ -24,14 +15,9 @@ const SpaceVizManager = {
   },
 
 
-  addSVDigit: async function(should_redraw, image, label){
-    if (image === undefined || label === undefined) {
-      const imageData = getRandomImage();
-      image = imageData.image;
-      label = imageData.label;
-    }
-    const vec = imageToVec(image, label);
-    await SpaceVizManager.space_viz.addDigit(image, label, vec);
+  addSVDigit: async function(should_redraw, index, image, label, vec){
+    alert("TODO: replace addSVDigit calls with requests to backend")
+    await SpaceVizManager.space_viz.addDigit(index, image, label, vec);
     if (should_redraw != false) SpaceVizManager.space_viz.draw();
   },
 
@@ -47,21 +33,26 @@ const SpaceVizManager = {
   },
 
 
-  continueResampleSV: async function(){
+  continueResampleSV: async function(vecsToUpdate){
+    for (let [idx, vec] of vecsToUpdate) {
+      const im = console.log("NEED TO FIND SpaceVizManager.space_viz.images[n].index == idx");
+      im.vector = vec;
+      im.projectedVector = undefined;
+    }
+    const index_list = []
     for (let i = 0; i < SAMPLE_N; i++) {
       const cur = RESAMPLE_POINTER.n++ % SpaceVizManager.space_viz.images.length
       const im = SpaceVizManager.space_viz.images[cur];
-      im.vector = imageToVec(im.image, im.label);
-      im.projectedVector = undefined;
+      index_list.append(im.index);
     }
     SpaceVizManager.space_viz.draw(false);
     if (window._CONTINUE_RESAMPLE) {
-      setTimeout(continueResampleSV, SAMPLE_RATE);
+      requestSpaceVizUpdates(index_list);
     }
   },
 
   dimToggleSV: async function(){
-    setSV(SpaceVizManager.space_viz.dims === 2 ? 3 : 2);
+    SpaceVizManager.setSV(SpaceVizManager.space_viz.dims === 2 ? 3 : 2);
     SpaceVizManager.space_viz.draw();
     document.getElementById("SV-dim-toggle").innerHTML = SpaceVizManager.getSVDims();
   },
@@ -79,7 +70,9 @@ const SpaceVizManager = {
     );
     document.getElementById("SV-add-100").addEventListener("click",
       () => {
-      	for (let i = 0; i < 100; i++) addSVDigit(false); SpaceVizManager.space_viz.draw();
+      	for (let i = 0; i < 100; i++) {
+          SpaceVizManager.addSVDigit(false); SpaceVizManager.space_viz.draw();
+        }
       }
     );
     document.getElementById("SV-resample").addEventListener("click", 
