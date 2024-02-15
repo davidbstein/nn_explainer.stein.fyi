@@ -43,6 +43,7 @@ class Neuron {
     if (accumulateGradients) {
       this.weightGradientsSum = this.weightGradientsSum.map((sum, index) => sum + weightGradients[index]);
       this.biasGradientSum += biasGradient;
+      this.countGradientUpdates++;
     } else {
       // Apply weight and bias updates directly
       for (let i = 0; i < this.weights.length; i++) {

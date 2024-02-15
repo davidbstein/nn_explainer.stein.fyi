@@ -236,6 +236,7 @@ async function doBatch(network, batchSize, imageGetter) {
     layer.neurons.forEach(neuron => {
       neuron.weightGradientsSum = new Array(neuron.weights.length).fill(0);
       neuron.biasGradientSum = 0;
+      neuron.countGradientUpdates = 0;
     });
   });
 
@@ -244,7 +245,7 @@ async function doBatch(network, batchSize, imageGetter) {
   let count = 0;
   for (let j = 0; j < batchSize; j++) {
     const imageData = imageGetter();
-    let input = imageData.image.map(x => x / 255);
+    let input = imageData.image;
     let label = imageData.label;
 
     // Backward pass, accumulate gradients
@@ -271,8 +272,8 @@ async function doBatch(network, batchSize, imageGetter) {
   //console.info(`loss: ${averageLoss.toFixed(3)}`, `learning rate: ${learningRate.toFixed(3)}`, lossTextBar);
   network.layers.forEach(layer => {
     layer.neurons.forEach(neuron => {
-      neuron.weights = neuron.weights.map((weight, index) => weight - learningRate * neuron.weightGradientsSum[index] / batchSize);
-      neuron.bias -= learningRate * neuron.biasGradientSum / batchSize;
+      neuron.weights = neuron.weights.map((weight, index) => weight - learningRate * neuron.weightGradientsSum[index] / neuron.countGradientUpdates);
+      neuron.bias -= learningRate * neuron.biasGradientSum / neuron.countGradientUpdates;
     });
   });
 }

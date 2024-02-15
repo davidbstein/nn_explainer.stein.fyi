@@ -14,6 +14,7 @@ window.onload = async function () {
     switch (type) {
       case 'networkLoaded':
       case 'networkReady':
+        hideBackprop();
         network = data.network;
         updateNetworkViz(data.network, data.inputs, data.label);
         break;
@@ -36,6 +37,7 @@ window.onload = async function () {
       case 'spaceVizVectorData':
         break;
       case 'currentBackpropData':
+        showBackprop(data);
         break;
     }
   };
@@ -223,6 +225,19 @@ window.onload = async function () {
     networkWorker.postMessage({
       type: 'pauseTraining'
     });
+  }
+
+  function hideBackprop(){
+    document.getElementById("backprop-preview").classList.add("hidden");
+  }
+
+  function showBackprop(data){
+    const container = document.getElementById("backprop-preview");
+    container.classList.remove("hidden");
+    drawNeuronGradients(
+      container.querySelector("#all-backprop-layers"),
+      data.loss, data.gradients
+    );
   }
   /**
    * START SIMULATOR
