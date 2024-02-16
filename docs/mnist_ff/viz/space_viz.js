@@ -55,11 +55,11 @@ class SpaceViz {
     let [error, iter] = tsne.run();
     let points = tsne.getOutputScaled().map((point) => point.map((x) => (x/2)+.5));
     this.images.forEach((img, idx) => {
-      img.projectedVector = points[idx];
+      img.projectedVector = undefined;
     });
   }
 
-  projectVector(vector) {
+  projectVector(vector, scale=1) {
     if (!this.tsne || this.countdown_to_rebalance-- <= 0) {
       this.resetProjection();
       this.countdown_to_rebalance = this.images.length;
@@ -78,15 +78,18 @@ class SpaceViz {
     const projectedNewVector = this.tsne.project(nearestVector, vector);
 
     // Normalize the projected point to be between 0 and 1
-    const normalizedNewVector = [
-      (projectedNewVector[0] - Math.min(...this.images.map((img) => img.vector[0]))) /
-        (Math.max(...this.images.map((img) => img.vector[0])) -
-          Math.min(...this.images.map((img) => img.vector[0]))),
-      (projectedNewVector[1] - Math.min(...this.images.map((img) => img.vector[1]))) /
-        (Math.max(...this.images.map((img) => img.vector[1])) -
-          Math.min(...this.images.map((img) => img.vector[1]))),
-    ];
-
+    const normalizedNewVector = []
+    for (let n = 0; n < projectedNewVector.length; n++){
+      normalizedNewVector.push( scale *
+        (projectedNewVector[n] - Math.min(...this.images.map((img) => img.vector[n])))
+        /
+        (
+          Math.max(...this.images.map((img) => img.vector[n]))
+          -
+          Math.min(...this.images.map((img) => img.vector[n]))
+        )
+      );
+    }
     return normalizedNewVector;
   }
 
@@ -142,7 +145,7 @@ class SpaceViz {
    * draw all the images into the canvas
    * @param {*} clear whether to clear the canvas before drawing
    */
-  async draw(clear = true) {
+  async draw(clear) {
     if (this.dims === 2) {
       await this.draw2d(clear);
     } else if (this.dims === 3) {
@@ -224,6 +227,7 @@ class SpaceViz {
 
   async draw3d(clear = false) {
     if (clear) {
+      console.log("clearing!");
       while (this.scene.children.length > 0) {
         this.scene.remove(this.scene.children[0]);
       }
@@ -234,10 +238,10 @@ class SpaceViz {
     const scale = 1 / Math.min((Math.max(1, Math.log10(this.images.length) - 1)), 2);
     for (let image of this.images) {
       if (!image.projectedVector) {
-        image.projectedVector = this.projectVector(image.vector);
+        image.projectedVector = this.projectVector(image.vector, 2);
         if (image.sprite) {
           this.scene.remove(image.sprite);
-          console.log()
+          console.log("removed spite")
         }
         this.drawDigit3d(image.image, image.label, image.projectedVector, scale);
       }
@@ -302,7 +306,7 @@ class SpaceViz {
     return canvas;
   }
 
-  animate3D(height=7.5, radius=15, speed=40 /*sec per rotation*/) {
+  animate3D(height=7.5, radius=15, speed=50 /*sec per rotation*/) {
     const center = [.5, .5, .5];
     const elapsedTime = Date.now() - this.starttime;
     const angle = (elapsedTime % (speed * 1000)) / (speed * 1000) * Math.PI * 2;

@@ -172,10 +172,15 @@ body {
   margin: .2em;
 }
 
+#all-backprop-layers .backprop-neuron canvas {
+  /*filter: brightness(200%);*/
+  background: none;
+}
+
 .neuron-weight canvas, .neuron-values canvas, .neuron-inputs canvas {
   max-width: 3em;
   max-height: 3em;
-  background: #555;
+  background: #222;
   image-rendering: pixelated;
 }
 

@@ -36,10 +36,9 @@ self.onmessage = async function(event) {
       getSVImages(data.n);
       break;
     case 'requestVectors':
-      getVectors(data.images);
+      getVectors(data.index_list);
       break;
     case 'changeWeights':
-
       break;
     case 'loadSavedNetwork':
       loadSavedNetwork(data.layers);
@@ -59,6 +58,9 @@ self.onmessage = async function(event) {
       break;
     case 'requestBackProp':
       computeBackpropScores();
+      break;
+    case 'changeTrainingRate':
+      OVERRIDE_RATE = data.rate;
       break;
   }
 };
@@ -169,27 +171,16 @@ function imageToSVVec(input) {
   return layer;
 }
 
-function getVectors(images){
+function getVectors(index_list){
   vectors = {}
-  for (let im of images){
-    to_ret[im.id] = imageToVec(im.image);
+  for (let idx of index_list){
+    const im = getImageByIndex(idx);
+    vectors[idx] = imageToSVVec(im.image);
   }
   self.postMessage({
     type: 'spaceVizVectorData',
     data: {vectors}
   });
-}
-
-function imageToVec(pixelData){
-  const outputs = network.computeInternals(input);
-  let layer = null;
-  for (let i = 0; i < outputs.length; i++) {
-    let currentLayer = outputs[i];
-    if (layer === null || currentLayer.length <= layer.length) {
-      layer = currentLayer;
-    }
-  }
-  return layer;
 }
 
 /** TRAINING **/
@@ -259,7 +250,8 @@ async function doBatch(network, batchSize, imageGetter) {
 
     // Backward pass, accumulate gradients
     let outputs = network.computeInternals(input);
-    let outputGradients = [];
+    let outputGradients = _computeFinalLossGradient(outputs, label);
+/*    let outputGradients = [];
     for (let k = 0; k < outputs[outputs.length - 1].length; k++) {
       const output = outputs[outputs.length - 1][k];
       const target = k === label ? 1 : 0;
@@ -267,7 +259,7 @@ async function doBatch(network, batchSize, imageGetter) {
       // const target = k === label ? 1 : -1;
       // outputGradients.push(Math.abs(output - target));
     }
-    const loss = outputGradients.reduce((sum, gradient) => sum + gradient ** 2, 0) / 2;
+*/    const loss = outputGradients.reduce((sum, gradient) => sum + gradient ** 2, 0) / 2;
     averageLoss = (loss / ++count) + (averageLoss * (count - 1) / count);
     for (let k = network.layers.length - 1; k >= 0; k--) {
       const layer = network.layers[k];
@@ -298,12 +290,13 @@ function getBackProp(network, input, label) {
 
   // Backward pass, accumulate gradients
   let outputs = network.computeInternals(input);
-  let outputGradients = [];
+  let outputGradients = _computeFinalLossGradient(outputs, label);
+/*  let outputGradients = [];
   for (let k = 0; k < outputs[outputs.length - 1].length; k++) {
     const output = outputs[outputs.length - 1][k];
     const target = k === label ? 1 : 0;
     outputGradients.push((output - target) * (output > 0 ? 1 : 0));
-  }
+  }*/
   const loss = outputGradients.reduce((sum, gradient) => sum + gradient ** 2, 0) / 2;
   for (let k = network.layers.length - 1; k >= 0; k--) {
     const layer = network.layers[k];
@@ -325,6 +318,21 @@ function getBackProp(network, input, label) {
     loss:loss, gradients:to_ret
   };
 }
+
+
+function _computeFinalLossGradient(outputs, label) {
+  const lossGradient = [];
+  for (let k = 0; k < outputs[outputs.length - 1].length; k++) {
+    debugger
+    const output = outputs[outputs.length - 1][k];
+    if (k === label)
+      lossGradient.push((output - 1) * (output > 0 ? 1 : 0));
+    else
+      lossGradient.push(output * (output > 0 ? 1 : 0));
+  }
+  return lossGradient;
+}
+
 
 /* STORAGE */
 

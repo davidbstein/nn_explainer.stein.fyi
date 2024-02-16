@@ -137,9 +137,12 @@ window.onload = async function () {
   }
 
   function trainingRateChanged(event) {
-    OVERRIDE_RATE = event.target.value / 10;
-    document.querySelector("#training-rate-label").innerHTML = OVERRIDE_RATE;
-    console.log("CURRENTLY NOT SETTING THE OVERRIDE RATE")
+    const rate = event.target.value / 10;
+    document.querySelector("#training-rate-label").innerHTML = rate;
+    networkWorker.postMessage({
+      type: 'changeTrainingRate',
+      data: { rate }
+    });
   }
 
   function loadNewLayers() {
@@ -160,13 +163,11 @@ window.onload = async function () {
   }
 
   function processSpaceVizImageData(data){
-    for (let im of data.images) {
-      SpaceVizManager.addSVDigit(should_redraw, im.index, im.image, im.label, im.vec);
-    }
+    SpaceVizManager.addSVDigits(data.images);
   }
 
   function processSpaceVizVectorData(data){
-    SpaceVizManager.continueResampleSV(data.vecsToUpdate);
+    SpaceVizManager.continueResampleSV(data.vectors);
   }
 
   function disableButtons(disable){
@@ -250,6 +251,21 @@ window.onload = async function () {
       container.querySelector("#all-backprop-layers"),
       data.loss, data.gradients
     );
+  }
+
+  function requestSVUpdates(index_list) {
+    networkWorker.postMessage({
+      type: 'requestVectors',
+      data: { index_list }
+    });
+  }
+
+
+  function requestSVDigits(n) {
+    networkWorker.postMessage({
+      type: 'requestImages',
+      data: { n }
+    });
   }
   /**
    * START SIMULATOR
@@ -363,5 +379,5 @@ window.onload = async function () {
   CheckpointManager.updateCheckpointList();
 
   await SpaceVizManager.setSV(2);
-  SpaceVizManager.loadSpaceViz();
+  SpaceVizManager.loadSpaceViz(requestSVDigits, requestSVUpdates);
 }

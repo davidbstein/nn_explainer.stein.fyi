@@ -52,7 +52,10 @@ function drawNeuronGradients(target, loss, gradients){
   // gradients is of form [{weight_grads: (784), bias_grad: n}, ...]
   // works with drawNeuronWeights(target, weight_grads, width, height, ...)
   target.innerHTML = "";
-  const colors = [[128,64,255], [64, 196, 255], (x) => x];
+  const colors = [[196,128,255], [128, 216, 255], (x) => {
+    xx = Math.min(1, x);
+    return 1 - ((1 - xx) ** 10)
+  }];
   for (let layer of gradients) {
     const layerDiv = document.createElement("div");
     layerDiv.className = "backprop-layer";
