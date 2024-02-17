@@ -1,7 +1,8 @@
 const SAMPLE_RATE = 500;
-const SAMPLE_N = 50;
+const SAMPLE_N = 500;
 const RESAMPLE_POINTER = {n: 0}
-
+const _ANIMATION_CLOCK = new THREE.Clock();
+let _ANIMATION_DELTA = 0;
 class SpaceViz {
   /**
    * visualizer that iteratively adds 28x28 digits into a 500px by 500px canvas in the target div
@@ -194,7 +195,7 @@ class SpaceViz {
 
   reset() {
     this.images = [];
-    this.draw();
+    this.draw(true);
   }
 
 
@@ -236,6 +237,13 @@ class SpaceViz {
       await this.resetProjection();
     }
     const scale = 1 / Math.min((Math.max(1, Math.log10(this.images.length) - 1)), 2);
+    const boundary = new THREE.BoxGeometry( 15, 15, 15 );
+    const edgesGeometry = new THREE.EdgesGeometry( boundary );
+    const material = new THREE.LineBasicMaterial();
+    material.transparent = true;
+    material.opacity = .2;
+    const bounding_box = new THREE.LineSegments( edgesGeometry, material );
+    this.scene.add( bounding_box );
     for (let image of this.images) {
       if (!image.projectedVector) {
         image.projectedVector = this.projectVector(image.vector, 2);
@@ -252,7 +260,8 @@ class SpaceViz {
   drawDigit3d(image, label, projectedVector, scale, useDots=false) {
     const [x, y, z] = projectedVector;
     const [r, g, b] = this.getColor(label);
-    const position = [x * 10 - 5, y * 10 - 5, z * 10 - 5];
+    const s = 1.5;
+    const position = [x * 10 - 5, y * 10 - 5, z * 10 - 5].map(e=>e*s);
     const newPosition = new THREE.Vector3(...position); // Target position as a
 
     if (!image.sprite) {
@@ -267,14 +276,14 @@ class SpaceViz {
         this.scene.add(sprite);
         image.sprite = ball;
       } else {
-        const imageWidth = 28 * scale;
-        const imageHeight = 28 * scale;
         const texture = new THREE.CanvasTexture(this.imageToCanvas(image, r, g, b, scale));
         texture.minFilter = THREE.LinearFilter;
         texture.magFilter = THREE.LinearFilter;
         const material = new THREE.SpriteMaterial({ map: texture });
         const sprite = new THREE.Sprite(material);
-        sprite.scale.set(imageWidth / 10, imageHeight / 10, 1);
+        const imageWidth = 28;
+        const imageHeight = 28;
+        sprite.scale.set(imageWidth * scale / 10, imageHeight * scale / 10, 1);
         sprite.position.set(...position);
         this.scene.add(sprite);
         image.sprite = sprite;
@@ -306,8 +315,14 @@ class SpaceViz {
     return canvas;
   }
 
-  animate3D(height=7.5, radius=15, speed=50 /*sec per rotation*/) {
-    const center = [.5, .5, .5];
+  animate3D(height=9.5, radius=15, speed=50 /*sec per rotation*/) {
+    if (this.images.length !== 0) requestAnimationFrame(() => this.animate3D());
+    const delta = _ANIMATION_CLOCK.getDelta()
+    const fps = 10;
+    _ANIMATION_DELTA += delta;
+    if (_ANIMATION_DELTA < 1/fps) return;
+    _ANIMATION_DELTA = _ANIMATION_DELTA % (1/fps);
+    const center = [.5, 0, .5];
     const elapsedTime = Date.now() - this.starttime;
     const angle = (elapsedTime % (speed * 1000)) / (speed * 1000) * Math.PI * 2;
     const x = center[0] + radius * Math.cos(angle);
@@ -318,12 +333,10 @@ class SpaceViz {
     this.camera.lookAt(...center);
 
     this.renderer.render(this.scene, this.camera);
-
-    requestAnimationFrame(() => this.animate3D());
   }
 
 
-  animateSpritePosition(sprite, targetPosition, duration = 1000) {
+  animateSpritePosition(sprite, targetPosition, duration = 250) {
     const startPosition = sprite.position.clone();
     const startTime = performance.now(); // Use high-resolution time if available
 
@@ -334,13 +347,16 @@ class SpaceViz {
       if (fraction < 1) {
         // Linearly interpolate position for the duration of the animation
         const currentPosition = startPosition.clone().lerp(targetPosition, fraction);
+        const imageWidth = 28;
+        const imageHeight = 28;
+        const _this = SpaceVizManager.space_viz;
+        const scale = 1 / Math.min((Math.max(1, Math.log(_this.images.length) - 1)), 2);
+        sprite.scale.set(imageWidth * scale / 10, imageHeight * scale / 10, 1);
         sprite.position.set(currentPosition.x, currentPosition.y, currentPosition.z);
         requestAnimationFrame(animate);
       } else {
         sprite.position.set(targetPosition.x, targetPosition.y, targetPosition.z); // Ensure final position
       }
-
-      // Optionally, update your rendering here if it's not done elsewhere
     }
 
     requestAnimationFrame(animate);

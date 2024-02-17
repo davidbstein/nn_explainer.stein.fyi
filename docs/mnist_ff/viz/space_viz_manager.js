@@ -33,6 +33,7 @@ const SpaceVizManager = {
   },
 
   continueResampleSV: async function(vecsToUpdate){
+    if (SpaceVizManager.space_viz.images.length === 0) return;
     for (let im of SpaceVizManager.space_viz.images) {
       const vec = vecsToUpdate[im.index];
       if (vec) {
@@ -50,7 +51,7 @@ const SpaceVizManager = {
     if (window._CONTINUE_RESAMPLE) {
       setTimeout(
         () => SpaceVizManager.updateVectorCallback(index_list),
-        SpaceVizManager.space_viz.dims == 3 ? 250 : 0
+        SpaceVizManager.space_viz.dims == 3 ? 100 : 0
       );
     }
   },

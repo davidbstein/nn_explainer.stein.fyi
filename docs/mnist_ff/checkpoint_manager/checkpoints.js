@@ -4,6 +4,10 @@ const CheckpointManager = {
   listPreloads: () => {
     return [{
       size: [8,8],
+    }, {
+      size: [8,5,2,6,7],
+    }, {
+      size: [7,5,3,5,7],
     }]
   },
 
