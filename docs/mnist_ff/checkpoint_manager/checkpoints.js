@@ -4,10 +4,17 @@ const CheckpointManager = {
   listPreloads: () => {
     return [{
       size: [8,8],
+      filename: "preload_8_8"
     }, {
       size: [8,5,2,6,7],
+      filename: "preload_8_5_2_6_7"
     }, {
       size: [7,5,3,5,7],
+      filename: "preload_7_5_3_5_7"
+    }, {
+      size: [4, 4],
+      name: "4x4, even digits only",
+      filename: "preload_4_4_even"
     }]
   },
 
@@ -49,7 +56,7 @@ const CheckpointManager = {
     for (let preload of CheckpointManager.listPreloads()) {
       const button = document.createElement("button");
       // checkpoint.id is a timestamp, convert to isodate
-      button.innerHTML = `Pretrained network: ${preload.size.join("x")}`;
+      button.innerHTML = `Pretrained network: ${preload.name || preload.size.join("x")}`;
       button.addEventListener("click", () => CheckpointManager.restorePretrained(preload));
       checkpointDiv.appendChild(button);
     }
@@ -64,7 +71,7 @@ const CheckpointManager = {
     console.log("restoring", checkpoint);
     const layerSizes = checkpoint.layout.slice(0,-1).join(",");
     document.getElementById("layers-input").value = layerSizes;
-    window.history.pushState({}, "", `?${layerSizes}`);
+    window.history.pushState({}, "", `?${layerSizes}${window.location.hash}`);
     CheckpointManager._emitNewNetwork(checkpoint);
     //_loadWeightsFromSerialized();
   },
@@ -73,7 +80,7 @@ const CheckpointManager = {
     let checkpoint = await CheckpointManager.restoreNetworkWeightsFromPretrained(preload);
     const layout = checkpoint.layout.slice(0,-1);
     document.getElementById("layers-input").value = layout.join(",");
-    window.history.pushState({}, "", `?${layout.join(",")}`);
+    window.history.pushState({}, "", `?${layout.join(",")}${window.location.hash}`);
     CheckpointManager._emitNewNetwork(checkpoint);
   },
 
@@ -84,7 +91,7 @@ const CheckpointManager = {
   },
 
   restoreNetworkWeightsFromPretrained: async function (preload){
-    const name = `preload_${preload.size.join("_")}`;
+    const name = preload.filename;
     load_module(`./checkpoint_manager/${name}.js`);
     await delay(0);
     const get_fn = window[name];

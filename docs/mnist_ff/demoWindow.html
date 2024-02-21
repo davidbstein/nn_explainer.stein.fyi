@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NN Demo</title>
+    <link rel="stylesheet" type="text/css" href="/mnist_ff/style.css">
+</head>
+<body>
+    <div id="demo-container">
+        <div id="progress-container">
+            <div id="progress-bar"></div><div id="progress-tip"></div>
+            <div id="progress-label">
+                <div id="progress-label-n"></div>
+                <div id="progress-label-eta"></div>
+            </div>
+        </div>
+        <div id="network-container" class="hide-internals">
+            <div id="input-container">
+                <div id="input-label"><span id="input-label-value"></span></div>
+                <div id="input-image" class="draw-mode">Loading...</div>
+                <div id="edit-buttons" class="buttons">
+                    <button id="draw-erase-toggle">draw mode</button>
+                </div>
+                <div id="digit-list"> 
+                    <div>Available Digits</div> 
+                    <div id="current-digits"> </div>
+                </div>
+            </div>
+            <div id="hidden-layers-container">
+                <div><!--Hidden Layers--></div>
+                <div id="all-layers">
+                    <div id="hidden-layers"></div>
+                    <div id="output"></div>
+                </div>
+                <div id="layers-viz-buttons">
+                    <button id="layer-viz-mode-toggle">show internals</button>
+                </div>
+            </div>
+
+            <div id="backprop-preview" class="hidden">
+                <div id="all-backprop-layers"></div>
+                <div id="all-backprop-output"></div>
+            </div>
+
+            <div id="space-viz-container" class="minimized">
+                <div id="space-viz"></div>
+                <div class="space-viz-controls buttons">
+                    <button id="SV-add-current"> add current </button>
+                    <button id="SV-add-random"> add random </button>
+                    <button id="SV-add-100"> add 100 </button>
+                </div>
+                <div class="space-viz-controls buttons">
+                    <button id="SV-resample"> resample </button>
+                    <button id="SV-reset"> reset </button>
+                    <button id="SV-retrain"> retrain </button>
+                    <button id="SV-dim-toggle"> 2D </button>
+                </div>
+            </div>
+
+            <div id="space-viz-toggle-container">
+                <button id="space-viz-toggle">toggle latent space visualizer</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

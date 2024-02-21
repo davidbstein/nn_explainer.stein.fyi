@@ -4,9 +4,63 @@ load_module("./viz/viz.js")
 load_module("./viz/space_viz_manager.js")
 const networkWorker = new Worker('./networkWorker.js');
 
+let demoWindow;
+let demoContent;
+
+async function waitForWindowLoad(win) {
+    await new Promise(resolve => {
+        const checkReady = () => {
+            if (win.document.readyState === 'complete') {
+                resolve();
+            } else {
+                setTimeout(checkReady, 50);
+            }
+        };
+        checkReady();
+    });
+}
 
 window.onload = async function () {
   let network;
+  
+  const isPresentMode = window.location.hash==="#present";
+  if (isPresentMode){
+    const w = 1440;
+    const h = 800;
+    demoWindow = window.open(
+      'demoWindow.html', 
+      'DemoWindow', 
+      `width=${w},height=${h},resizable=yes`
+    );
+    await waitForWindowLoad(demoWindow);
+    demoContent = demoWindow.document.querySelector('#demo-container');
+    
+    window.addEventListener('beforeunload', function (e) {
+      if (demoWindow && !demoWindow.closed) {
+        demoWindow.close();
+      }
+    });
+    Array.from(document.querySelectorAll(".buttons")).map((button) => {
+      button.classList.add("show-content");
+    })
+
+  } else {
+    const demoContainer = document.querySelector('#demo-container');
+    const iframeContainer = document.createElement('div');
+    iframeContainer.id = 'demo-iframe-container';
+    demoContainer.appendChild(iframeContainer);
+
+    demoWindow = document.createElement('iframe');
+    demoWindow.setAttribute('width', '100%');
+    demoWindow.setAttribute('height', '100%');
+    demoWindow.setAttribute('src', 'demoWindow.html');
+    iframeContainer.appendChild(demoWindow);
+
+    await new Promise((resolve) => {
+        demoWindow.onload = resolve;
+    });
+    demoContent = demoWindow.contentWindow.document.querySelector('#demo-container');
+  }
 
   networkWorker.onmessage = function(event) {
     const { type, data } = event.data;
@@ -25,7 +79,7 @@ window.onload = async function () {
         clearProgressBar();
         disableButtons(false);
         CheckpointManager.storeNetworkInLocalStorage(data.network);
-        document.getElementById("pause-training").hidden = true;
+        document.querySelector("#pause-training").hidden = true;
         break;
       case 'batchComplete':
         // Handle completion of a single batch
@@ -39,7 +93,7 @@ window.onload = async function () {
         processSpaceVizVectorData(data);
         break;
       case 'currentBackpropData':
-        showBackprop(data);
+        toggleBackprop(data);
         break;
     }
   };
@@ -73,8 +127,8 @@ window.onload = async function () {
   );
 
   function startTraining(n, batchSize) {
-    document.getElementById("pause-training").hidden = false;
-    document.getElementById("pause-training").disabled = false;
+    document.querySelector("#pause-training").hidden = false;
+    document.querySelector("#pause-training").disabled = false;
     networkWorker.postMessage({
       type: 'trainBatch',
       data: { n, batchSize }
@@ -146,14 +200,14 @@ window.onload = async function () {
   }
 
   function loadNewLayers() {
-    const layers = document.getElementById("layers-input").value.split(",").map(x => parseInt(x));
-    window.history.pushState({}, "", `?${layers.join(",")}`);
+    const layers = document.querySelector("#layers-input").value.split(",").map(x => parseInt(x));
+    window.history.pushState({}, "", `?${layers.join(",")}${window.location.hash}`);
     networkWorker.postMessage({
       type: 'chageLayersButRetainWeights',
       data: {layers}
     });
-    document.getElementById("layers-input").classList.remove("changed");
-    document.getElementById("set-layers").disabled = true;
+    document.querySelector("#layers-input").classList.remove("changed");
+    document.querySelector("#set-layers").disabled = true;
   }
 
   function loadRandomImage(){
@@ -171,7 +225,7 @@ window.onload = async function () {
   }
 
   function disableButtons(disable){
-    for (q of document.getElementById("config-container").querySelectorAll("button")) {
+    for (q of document.querySelector("#config-container").querySelectorAll("button")) {
       q.disabled = disable;
     }
   }
@@ -204,13 +258,18 @@ window.onload = async function () {
         window.currentDigits.push(parseInt(elem.value));
       }
     }
+    demoContent.querySelector("#current-digits").innerHTML = window.currentDigits.join(" ")
+    networkWorker.postMessage({
+      type: 'setCurrentDigits',
+      data: { currentDigits: window.currentDigits }
+    });
   }
 
   function toggleDrawErase() {
     window.drawMode = !window.drawMode;
-    const button = document.getElementById("draw-erase-toggle");
+    const button = demoContent.querySelector("#draw-erase-toggle");
     button.innerHTML = window.drawMode ? "draw mode" : "erase mode";
-    const imageContainer = document.getElementById("input-image");
+    const imageContainer = demoContent.querySelector("#input-image");
     if (window.drawMode) {
       imageContainer.classList.add("draw-mode");
     } else {
@@ -220,8 +279,8 @@ window.onload = async function () {
 
   function toggleVizMode(event) {
     const toggleButton = event.target;
-    document.querySelector("#network-container").classList.toggle("hide-internals");
-    if (document.querySelector("#network-container").classList.contains("hide-internals") >= 0) {
+    demoContent.querySelector("#network-container").classList.toggle("hide-internals");
+    if (demoContent.querySelector("#network-container").classList.contains("hide-internals") >= 0) {
       window._INTERNALS_HIDDEN = true;
     } else {
       window._INTERNALS_HIDDEN = false;
@@ -229,7 +288,7 @@ window.onload = async function () {
   }
 
   function toggleSpaceViz(event) {
-    const container = document.querySelector("#space-viz-container");
+    const container = demoContent.querySelector("#space-viz-container");
     container.classList.toggle("minimized");
     if (window._CONTINUE_RESAMPLE) window._CONTINUE_RESAMPLE = (container.classList.indexOf("minimized") >= 0);
   }
@@ -241,12 +300,12 @@ window.onload = async function () {
   }
 
   function hideBackprop(){
-    document.getElementById("backprop-preview").classList.add("hidden");
+    demoContent.querySelector("#backprop-preview").classList.add("hidden");
   }
 
-  function showBackprop(data){
-    const container = document.getElementById("backprop-preview");
-    container.classList.remove("hidden");
+  function toggleBackprop(data){
+    const container = demoContent.querySelector("#backprop-preview");
+    container.classList.toggle("hidden");
     drawNeuronGradients(
       container.querySelector("#all-backprop-layers"),
       data.loss, data.gradients
@@ -265,6 +324,12 @@ window.onload = async function () {
     networkWorker.postMessage({
       type: 'requestImages',
       data: { n }
+    });
+  }
+
+  function requestCurrentSVDigit() {
+    networkWorker.postMessage({
+      type: 'requestCurrentImage'
     });
   }
   /**
@@ -298,86 +363,100 @@ window.onload = async function () {
   /**
    * SETUP BUTTONS
    */
-  document.getElementById('space-viz-toggle').addEventListener("click", 
+  demoContent.querySelector('#space-viz-toggle').addEventListener("click", 
     toggleSpaceViz
   );
-  document.getElementById('layer-viz-mode-toggle').addEventListener("click", 
+  demoContent.querySelector('#layer-viz-mode-toggle').addEventListener("click", 
     toggleVizMode
   );
-  document.getElementById("pause-training").addEventListener("click", 
+  document.querySelector("#pause-training").addEventListener("click", 
     pauseTraining
   );
-  document.getElementById("load-random-image").addEventListener("click", 
+  document.querySelector("#load-random-image").addEventListener("click", 
     loadRandomImage
   );
-  document.getElementById("clear-image").addEventListener("click", 
+  document.querySelector("#clear-image").addEventListener("click", 
     clearImage
   );
-  document.getElementById("reset-weights").addEventListener("click", 
+  document.querySelector("#reset-weights").addEventListener("click", 
     resetWeights
   );
-  document.getElementById("dampen-weights").addEventListener("click", 
+  document.querySelector("#dampen-weights").addEventListener("click", 
     dampenWeights
   );
-  document.getElementById("training-rate").addEventListener("input", 
+  document.querySelector("#training-rate").addEventListener("input", 
     trainingRateChanged
   );
-  document.getElementById("update-weights").addEventListener("click", 
+  document.querySelector("#update-weights").addEventListener("click", 
     () => updateWeights(1)
   );
-  document.getElementById("update-weights-1000").addEventListener("click", 
+  document.querySelector("#update-weights-1000").addEventListener("click", 
     () => updateWeights(10000)
   );
-  document.getElementById("train-1").addEventListener("click", 
+  document.querySelector("#train-1").addEventListener("click", 
     () => train(1)
   );
-  document.getElementById("train-1000").addEventListener("click", 
+  document.querySelector("#train-1000").addEventListener("click", 
     () => train(10000)
   );
-  document.getElementById("train-100k").addEventListener("click", 
+  document.querySelector("#train-100k").addEventListener("click", 
     () => train(100000)
   );
-  document.getElementById("train-1m").addEventListener("click", 
+  document.querySelector("#train-1m").addEventListener("click", 
     () => train(100000000)
   );
-  document.getElementById("draw-erase-toggle").addEventListener("click", 
+  demoContent.querySelector("#draw-erase-toggle").addEventListener("click", 
     toggleDrawErase
   );
   document.querySelectorAll("input[name=digit]").forEach((elem) => {
     elem.addEventListener("change", updateCurrentDigits);
   });
-  document.getElementById("deselect-all-digits").addEventListener("click", () => {
+  document.querySelector("#select-odd-digits").addEventListener("click", () => {
     for (let elem of document.querySelectorAll("input[name=digit]")) {
-      elem.checked = false;
+      if (parseInt(elem.value) % 2 == 0) elem.checked = false;
+      else elem.checked = true;
     }
     updateCurrentDigits();
   });
-  document.getElementById("select-all-digits").addEventListener("click", () => {
+  document.querySelector("#select-even-digits").addEventListener("click", () => {
+    for (let elem of document.querySelectorAll("input[name=digit]")) {
+      if (parseInt(elem.value) % 2 == 0) elem.checked = true;
+      else elem.checked = false;
+    }
+    updateCurrentDigits();
+  });
+  document.querySelector("#select-all-digits").addEventListener("click", () => {
     for (let elem of document.querySelectorAll("input[name=digit]")) {
       elem.checked = true;
     }
     updateCurrentDigits();
   });
-  document.getElementById('backprop-button').addEventListener("click",
+  document.querySelector("#deselect-all-digits").addEventListener("click", () => {
+    for (let elem of document.querySelectorAll("input[name=digit]")) {
+      elem.checked = false;
+    }
+    updateCurrentDigits();
+  });
+  document.querySelector('#backprop-button').addEventListener("click",
     computeBackprop
   );
 
-  document.getElementById("layers-input").placeholder = `comma-seporated layers (e.g., ${layers.join(",")})`;
-  document.getElementById("layers-input").value = `${layers.join(",")}`;
-  document.getElementById("layers-input").onkeydown = (e) => {
-    document.getElementById("set-layers").disabled = false;
+  document.querySelector("#layers-input").placeholder = `comma-seporated layers (e.g., ${layers.join(",")})`;
+  document.querySelector("#layers-input").value = `${layers.join(",")}`;
+  document.querySelector("#layers-input").onkeydown = (e) => {
+    document.querySelector("#set-layers").disabled = false;
     if (e.keyCode === 13) {
       loadNewLayers();
     }
   }
-  document.getElementById("set-layers").addEventListener("click", 
+  document.querySelector("#set-layers").addEventListener("click", 
     loadNewLayers
   );
-  document.getElementById("save-checkpoint").addEventListener("click", 
+  document.querySelector("#save-checkpoint").addEventListener("click", 
     () => CheckpointManager.saveCheckpoint(network)
   );
   CheckpointManager.updateCheckpointList();
 
   await SpaceVizManager.setSV(2);
-  SpaceVizManager.loadSpaceViz(requestSVDigits, requestSVUpdates);
+  SpaceVizManager.loadSpaceViz(requestSVDigits, requestCurrentSVDigit, requestSVUpdates);
 }

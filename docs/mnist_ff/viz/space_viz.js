@@ -1,11 +1,13 @@
 const SAMPLE_RATE = 500;
 const SAMPLE_N = 500;
+const _W = 35;
+const _H = 35;
 const RESAMPLE_POINTER = {n: 0}
 const _ANIMATION_CLOCK = new THREE.Clock();
 let _ANIMATION_DELTA = 0;
 class SpaceViz {
   /**
-   * visualizer that iteratively adds 28x28 digits into a 500px by 500px canvas in the target div
+   * visualizer that iteratively adds 28x28 digits into a {_W}em by {_H}em canvas in the target div
    * each image is placed on a location specified by x and y coordinates between 0 and 1, and is centered at that location
    * images are specified as a 784 number array between 0 and 1, representing an 28x28 image where 0 is black and 1 is white.
    * only non-zero pixels are drawn
@@ -26,7 +28,7 @@ class SpaceViz {
     this.canvas = document.createElement("canvas");
     this.canvas.width = 500;
     this.canvas.height = 500;
-    this.canvas.style = "width: 500px; height: 500px;";
+    this.canvas.style = `width: ${_W}em; height: ${_H}em;`;
     this.ctx = this.canvas.getContext("2d");
     this.target.appendChild(this.canvas);
   }
@@ -103,6 +105,7 @@ class SpaceViz {
    * @param {*} scale the scale of the image, between 0 and 1, default to 1
    */
   addDigit(index, image, label, vector) {
+    if (this.images.filter((im)=>im.index === index).length > 0) return;
     const to_add = {
       image: image,
       label: label,
@@ -155,7 +158,7 @@ class SpaceViz {
     }
   }
 
-  async draw2d(clear = true) {
+  async draw2d(clear=true) {
     if (clear) {
       this.ctx.clearRect(0, 0, 500, 500);
     }
@@ -177,12 +180,12 @@ class SpaceViz {
     const [r, g, b] = this.getColor(label);
     const imageWidth = 28 * scale;
     const imageHeight = 28 * scale;
-    const xPos = x * (this.canvas.width - imageWidth) + imageWidth/2;
-    const yPos = y * (this.canvas.height - imageHeight) + imageHeight/2;
+    const xPos = (x * (this.canvas.width - imageWidth));
+    const yPos = (y * (this.canvas.height - imageHeight));
     for (let i = 0; i < 28; i++) {
       for (let j = 0; j < 28; j++) {
         const pixelValue = image[i * 28 + j];
-        this.ctx.fillStyle = `rgb(${r * 255}, ${g * 255}, ${b * 255}, ${pixelValue/4})`;
+        this.ctx.fillStyle = `rgb(${r * 255}, ${g * 255}, ${b * 255}, ${pixelValue/2})`;
         if (pixelValue > 0) {
           const pixelX = xPos + j * scale;
           const pixelY = yPos + i * scale;
@@ -221,7 +224,10 @@ class SpaceViz {
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(width, height);
-    this.target.appendChild(this.renderer.domElement);
+    const graphDomElement = this.renderer.domElement;
+    graphDomElement.style.height = `${_H}em`;
+    graphDomElement.style.width = `${_W}em`;
+    this.target.appendChild(graphDomElement);
     console.log("new 3d scene:", this.scene);
   }
 
@@ -257,7 +263,7 @@ class SpaceViz {
   }
 
 
-  drawDigit3d(image, label, projectedVector, scale, useDots=false) {
+  drawDigit3d(image, label, projectedVector, scale) {
     const [x, y, z] = projectedVector;
     const [r, g, b] = this.getColor(label);
     const s = 1.5;
@@ -265,29 +271,18 @@ class SpaceViz {
     const newPosition = new THREE.Vector3(...position); // Target position as a
 
     if (!image.sprite) {
-      console.log("adding a new image");
-      if (useDots) {
-        const geometry = new THREE.SphereGeometry(scale / 2, 32, 32);
-        const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(r, g, b) });
-        const ball = new THREE.Mesh(geometry, material);
-        material.transparent = true;
-        material.opacity = 0.2;
-        ball.position.set(...position);
-        this.scene.add(sprite);
-        image.sprite = ball;
-      } else {
-        const texture = new THREE.CanvasTexture(this.imageToCanvas(image, r, g, b, scale));
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        const material = new THREE.SpriteMaterial({ map: texture });
-        const sprite = new THREE.Sprite(material);
-        const imageWidth = 28;
-        const imageHeight = 28;
-        sprite.scale.set(imageWidth * scale / 10, imageHeight * scale / 10, 1);
-        sprite.position.set(...position);
-        this.scene.add(sprite);
-        image.sprite = sprite;
-      }
+      const canvasImage = this.imageToCanvas(image, r, g, b, scale);
+      const texture = new THREE.CanvasTexture(canvasImage);
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      const material = new THREE.SpriteMaterial({ map: texture });
+      const sprite = new THREE.Sprite(material);
+      const imageWidth = 28;
+      const imageHeight = 28;
+      sprite.scale.set(imageWidth * scale / 10, imageHeight * scale / 10, 1);
+      sprite.position.set(...position);
+      this.scene.add(sprite);
+      image.sprite = sprite;
     } else {
       this.animateSpritePosition(image.sprite, newPosition);
     }

@@ -4,9 +4,7 @@ function easingFn(x) {
 };
 
 function getColor(color_1, color_2, value, _easingFn=easingFn) {
-  //let color = Math.floor(Math.abs(weight) * 255);
   let alpha = Math.floor(_easingFn(Math.abs(value))*255);
-  //let color = Math.floor((weight * weight) * 255);
   const to_ret = [0,0,0,0];
   if (value > 0) {
     to_ret[0] = color_1[0];
@@ -192,6 +190,7 @@ function normalizeOutputVal(val){
 function drawOutput(target, layer, outputs, inputs) {
   for (let i = 0; i < 10; i++) {
     let div = document.createElement("div");
+    div.className="output-neuron";
     let circleDiv = document.createElement("div");
     let val = Math.max(outputs[i], 0);
     let outputColor = Math.min(val, 1);
@@ -241,7 +240,7 @@ function getAdjacentPixels(idx){
  * detect mouseover events on the input image, and update the input image to reflect the mouse position if the mouse is down
  */
 function instrumentInputImage(callback){
-  for (let elem of document.querySelectorAll(".input-pixel")) {
+  for (let elem of demoContent.querySelectorAll(".input-pixel")) {
     elem.addEventListener("mouseover", (e) => {
       const mouseDown = window.mouseDown;
       const pixelData = window.currentInput;
@@ -279,14 +278,14 @@ function drawInputImage(target, pixelData) {
 }
 
 function fixScalingIssue(){
-  const boxHeight = document.getElementById("hidden-layers").clientHeight;
-  for (let layerDiv of document.querySelectorAll(".hidden-layer")) {
-    const ratio = .9 * boxHeight / layerDiv.clientHeight;
+  const boxHeight = demoContent.querySelector("#all-layers").clientHeight;
+  for (let layerDiv of demoContent.querySelectorAll(".hidden-layer")) {
+    const ratio = 1.1 * layerDiv.clientHeight / window.height;
     if (ratio < 1) layerDiv.style.transform = `scale(${ratio})`;
   }
-  const outBoxHeight = document.getElementById("hidden-layers-container").clientHeight;
-  for (let layerDiv of document.querySelectorAll("#output")) {
-    const ratio = .9 * outBoxHeight / layerDiv.clientHeight;
+  const outBoxHeight = demoContent.querySelector("#hidden-layers-container").clientHeight;
+  for (let layerDiv of demoContent.querySelectorAll("#output")) {
+    const ratio = 1.1 * outBoxHeight / window.height;
     if (ratio < 1) layerDiv.style.transform = `scale(${ratio})`;
 
   }
@@ -303,10 +302,10 @@ window.addEventListener("resize", fixScalingIssue);
  * @param {*} network
  */
 function drawNetwork(network, inputs, label) {
-  const inputTarget = document.getElementById("input-image");
-  const inputLabelTarget = document.getElementById("input-label-value");
-  const hiddenTarget = document.getElementById("hidden-layers");
-  const outputTarget = document.getElementById("output");
+  const inputTarget = demoContent.querySelector("#input-image");
+  const inputLabelTarget = demoContent.querySelector("#input-label-value");
+  const hiddenTarget = demoContent.querySelector("#hidden-layers");
+  const outputTarget = demoContent.querySelector("#output");
   inputTarget.innerHTML = "";
   inputLabelTarget.innerHTML = label;
   hiddenTarget.innerHTML = "";
@@ -339,10 +338,10 @@ async function updateProgressBar(num, denom, startTime, scores){
   const progress = num / denom;
   const elapsed = Date.now() - startTime;
   const remaining = elapsed / progress - elapsed;
-  const progressContainer = document.getElementById("progress-container");
-  const progressBar = document.getElementById("progress-bar");
-  const progressLabel = document.getElementById("progress-label-n");
-  const progressETA = document.getElementById("progress-label-eta");
+  const progressContainer = demoContent.querySelector("#progress-container");
+  const progressBar = demoContent.querySelector("#progress-bar");
+  const progressLabel = demoContent.querySelector("#progress-label-n");
+  const progressETA = demoContent.querySelector("#progress-label-eta");
   //set width of progress bar
   progressBar.style.width = `${progress * 100}%`;
   //set text of progress bar
@@ -356,6 +355,6 @@ async function updateProgressBar(num, denom, startTime, scores){
 }
 
 function clearProgressBar(){
-  const progressContainer = document.getElementById("progress-container");
+  const progressContainer = demoContent.querySelector("#progress-container");
   progressContainer.style.display = "none";
 }

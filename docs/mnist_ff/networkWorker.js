@@ -8,8 +8,9 @@ importScripts(
 let network;
 let currentInput;
 let currentLabel;
+let currentImageIndex;
 let currentDigits = [0,1,2,3,4,5,6,7,8,9];
-let OVERRIDE_RATE = 1.0;
+let OVERRIDE_RATE = 2.5;
 let STOP_SIGNAL = false;
 // Handler for messages received from the main thread
 self.onmessage = async function(event) {
@@ -26,6 +27,9 @@ self.onmessage = async function(event) {
     case 'requestRandomImage':
       loadRandomImage();
       break;
+    case 'setCurrentDigits':
+      currentDigits = data.currentDigits;
+      break;
     case 'requestReset':
       resetWeights();
       break;
@@ -34,6 +38,9 @@ self.onmessage = async function(event) {
       break;
     case 'requestImages':
       getSVImages(data.n);
+      break;
+    case 'requestCurrentImage':
+      getCurrentSVImage();
       break;
     case 'requestVectors':
       getVectors(data.index_list);
@@ -73,6 +80,7 @@ function initializeNetwork(data){
   const randomImage = getRandomImage();
   currentInput = randomImage.image;
   currentLabel = randomImage.label;
+  currentImageIndex = randomImage.index;
   self.postMessage({
     type: 'networkLoaded',
     data: {
@@ -147,6 +155,16 @@ function computeBackpropScores(){
 }
 
 /** SPACE VIZ **/
+function getCurrentSVImage(){
+  const images = []
+  const im = getCurrentImage();
+  im.vec = imageToSVVec(im.image);
+  images.push(im)
+  self.postMessage({
+    type: 'spaceVizImageData',
+    data: {images}
+  });
+}
 
 function getSVImages(n){
   const images = [];
@@ -175,7 +193,7 @@ function getVectors(index_list){
   vectors = {}
   for (let idx of index_list){
     const im = getImageByIndex(idx);
-    vectors[idx] = imageToSVVec(im.image);
+    if (im) vectors[idx] = imageToSVVec(im.image);
   }
   self.postMessage({
     type: 'spaceVizVectorData',
@@ -223,6 +241,7 @@ async function trainBatched(n, batchSize=1, randomizeImages=true, update_step=10
       const im = imageGetter();
       currentInput = im.image;
       currentLabel = im.label;
+      currentImageIndex = im.index;
       broadcastNetworkUpdate();
     }
     ts = Math.floor((Date.now() - startTime)/2500);
@@ -335,7 +354,6 @@ function getBackProp(network, input, label) {
 function _computeFinalLossGradient(outputs, label) {
   const lossGradient = [];
   for (let k = 0; k < outputs[outputs.length - 1].length; k++) {
-    debugger
     const output = outputs[outputs.length - 1][k];
     if (k === label)
       lossGradient.push((output - 1) * (output > 0 ? 1 : 0));
@@ -384,10 +402,12 @@ function getCurrentImage() {
   return {
     image: currentInput,
     label: currentLabel,
+    index: currentImageIndex,
   }
 }
 
 function getImageByIndex(index){
+  if (index < 0 || index >= MNIST_TEST.length) return;
   const im = MNIST_TEST[index].image.map((x)=>x/255);
   return {
     image: im,
