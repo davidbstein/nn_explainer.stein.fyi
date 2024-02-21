@@ -197,7 +197,19 @@ function dynamicLearningRate(loss, maxRate=.5, decayRate=1){
 }
 
 
-async function trainBatched(n, batchSize=100, randomizeImages=true, update_step=10) {
+async function trainBatched(n, batchSize=1, randomizeImages=true, update_step=10) {
+  if (batchSize===1){
+    console.log(`training for ${n} iterations...`)
+    for (let i = 0; i < n; i++) {
+      const imageData = getRandomImage();
+      let input = imageData.image.map(x => x / 255);
+      let label = imageData.label;
+      let learningRate = window.LEARNING_RATE;
+      network.backward(input, label, learningRate);
+    }
+    broadcastTrainingComplete();
+    return;
+  }
   console.log(`training for ${n} iterations with batch size ${batchSize}...`)
   imageGetter = randomizeImages ? getRandomImage : getCurrentImage;
   let scores = estimateScores();
