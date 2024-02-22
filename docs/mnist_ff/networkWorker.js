@@ -11,6 +11,7 @@ let currentLabel;
 let currentImageIndex;
 let currentDigits = [0,1,2,3,4,5,6,7,8,9];
 let OVERRIDE_RATE = 2.5;
+let _OVERRIDE_ADJUSTMENT = 1;
 let STOP_SIGNAL = false;
 // Handler for messages received from the main thread
 self.onmessage = async function(event) {
@@ -22,7 +23,7 @@ self.onmessage = async function(event) {
       break;
     case 'trainBatch':
       STOP_SIGNAL = false;
-      await trainBatched(data.n, data.batchSize, data.imageGetter, data.render_update_callback, data.update_step);
+      await trainBatched(data.n, data.batchSize, data.randomizeImages);
       break;
     case 'requestRandomImage':
       loadRandomImage();
@@ -106,6 +107,7 @@ function loadRandomImage() {
   const randomImage = getRandomImage();
   currentInput = randomImage.image;
   currentLabel = randomImage.label;
+  currentImageIndex = randomImage.index;
   broadcastNetworkUpdate();
 }
 
@@ -203,19 +205,23 @@ function getVectors(index_list){
 
 /** TRAINING **/
 
-function dynamicLearningRate(loss, maxRate=.5, decayRate=1){
+function dynamicLearningRate(loss, maxRate=.2, decayRate=1){
+  const a = maxRate;
+  const b = decayRate * 5;
+  const x = (1-loss);
   // //exponential decay
-  // const a = maxRate;
-  // const b = decayRate;
-  // const x = loss;
-  // return a * Math.exp(-b * x);
-  const rate = Math.min(loss * loss/decayRate, maxRate);
-  if (OVERRIDE_RATE > 0) return rate * OVERRIDE_RATE;
+  // let rate = a * Math.exp(-b * x);
+  // // quadratic decay
+  let rate = Math.min(loss * loss/(decayRate/2), maxRate);
+  rate = Math.min(rate, maxRate);
+  // console.log(loss.toFixed(2), rate.toFixed(2));
+  if (OVERRIDE_RATE > 0) 
+    return Math.min(.5, rate * (OVERRIDE_RATE * _OVERRIDE_ADJUSTMENT));
   return rate;
 }
 
 
-async function trainBatched(n, batchSize=1, randomizeImages=true, update_step=10) {
+async function trainBatched(n, batchSize=1, randomizeImages=true) {
   if (batchSize===1){
     console.log(`training for ${n} iterations...`)
     for (let i = 0; i < n; i++) {
@@ -282,7 +288,8 @@ async function doBatch(network, batchSize, imageGetter) {
     // Backward pass, accumulate gradients
     let outputs = network.computeInternals(input);
     let outputGradients = _computeFinalLossGradient(outputs, label);
-/*    let outputGradients = [];
+    /*    
+    let outputGradients = [];
     for (let k = 0; k < outputs[outputs.length - 1].length; k++) {
       const output = outputs[outputs.length - 1][k];
       const target = k === label ? 1 : 0;
@@ -290,7 +297,8 @@ async function doBatch(network, batchSize, imageGetter) {
       // const target = k === label ? 1 : -1;
       // outputGradients.push(Math.abs(output - target));
     }
-*/    const loss = outputGradients.reduce((sum, gradient) => sum + gradient ** 2, 0) / 2;
+    */    
+    const loss = outputGradients.reduce((sum, gradient) => sum + gradient ** 2, 0) / 2;
     averageLoss = (loss / ++count) + (averageLoss * (count - 1) / count);
     for (let k = network.layers.length - 1; k >= 0; k--) {
       const layer = network.layers[k];
@@ -301,7 +309,7 @@ async function doBatch(network, batchSize, imageGetter) {
   // Update weights and biases based on accumulated gradients
   const learningRate = dynamicLearningRate(averageLoss, Math.log10(batchSize));
   const lossTextBar = `*`.repeat(Math.round(averageLoss*100));
-  //console.info(`loss: ${averageLoss.toFixed(3)}`, `learning rate: ${learningRate.toFixed(3)}`, lossTextBar);
+  //console.debug(`loss: ${averageLoss.toFixed(3)}`, `learning rate: ${learningRate.toFixed(3)}`, lossTextBar);
   network.layers.forEach(layer => {
     layer.neurons.forEach(neuron => {
       neuron.weights = neuron.weights.map((weight, index) => weight - learningRate * neuron.weightGradientsSum[index] / neuron.countGradientUpdates);
@@ -353,13 +361,28 @@ function getBackProp(network, input, label) {
 
 function _computeFinalLossGradient(outputs, label) {
   const lossGradient = [];
-  for (let k = 0; k < outputs[outputs.length - 1].length; k++) {
-    const output = outputs[outputs.length - 1][k];
-    if (k === label)
-      lossGradient.push((output - 1) * (output > 0 ? 1 : 0));
-    else
-      lossGradient.push(output * (output > 0 ? 1 : 0));
+  //pressure should be between -1 (output irrelevant) to 1 (all values relevant)
+  const correct_pressure = .25;
+  const incorrect_pressure = .25;
+  const n = 5
+  _OVERRIDE_ADJUSTMENT = 1 / (1 + (n * correct_pressure) + (n * incorrect_pressure))
+  for (let i = 0; i < outputs[outputs.length - 1].length; i++) {
+    const output = outputs[outputs.length - 1][i];
+    let target, value, diffrence;
+    if (i === label) {
+      target = 1+correct_pressure;
+      value = Math.max(0, output + correct_pressure);
+      difference = (value-target)/(1 + correct_pressure);
+    } else {
+      target = 0;
+      value = Math.max(0, output + incorrect_pressure);
+      difference = (value-target)/(1 + incorrect_pressure);
+    }
+    // setting pressure to 0 definately works. turing up incorrect pressurea bit makes for more obvious neuron inner workings.
+    // lossGradient.push(difference);
+    lossGradient.push(difference);
   }
+  //console.log(lossGradient.map((e) => e.toFixed(2)));
   return lossGradient;
 }
 

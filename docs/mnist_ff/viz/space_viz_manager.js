@@ -30,6 +30,7 @@ const SpaceVizManager = {
       SpaceVizManager.space_viz.addDigit(im.index, im.image, im.label, im.vec);
     }
     SpaceVizManager.space_viz.draw()
+    if (!window._CONTINUE_RESAMPLE) SpaceVizManager.resampleSV
   },
 
   continueResampleSV: async function(vecsToUpdate){
@@ -89,8 +90,8 @@ const SpaceVizManager = {
         SpaceVizManager.space_viz.reset();
       }
     );
-    demoContent.querySelector("#SV-retrain").addEventListener("click", 
-      SpaceVizManager.retrainSVProjections
+    demoContent.querySelector("#SV-spin").addEventListener("click", 
+      SpaceVizManager.space_viz.spinToggle
     );
     demoContent.querySelector("#SV-dim-toggle").innerHTML = SpaceVizManager.getSVDims();
     demoContent.querySelector("#SV-dim-toggle").addEventListener("click", 

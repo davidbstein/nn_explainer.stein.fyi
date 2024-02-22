@@ -5,6 +5,7 @@ const _H = 35;
 const RESAMPLE_POINTER = {n: 0}
 const _ANIMATION_CLOCK = new THREE.Clock();
 let _ANIMATION_DELTA = 0;
+let _SPINNING = false;
 class SpaceViz {
   /**
    * visualizer that iteratively adds 28x28 digits into a {_W}em by {_H}em canvas in the target div
@@ -310,6 +311,10 @@ class SpaceViz {
     return canvas;
   }
 
+  spinToggle(){
+    _SPINNING = !_SPINNING;
+  }
+
   animate3D(height=9.5, radius=15, speed=50 /*sec per rotation*/) {
     if (this.images.length !== 0) requestAnimationFrame(() => this.animate3D());
     const delta = _ANIMATION_CLOCK.getDelta()
@@ -319,7 +324,10 @@ class SpaceViz {
     _ANIMATION_DELTA = _ANIMATION_DELTA % (1/fps);
     const center = [.5, 0, .5];
     const elapsedTime = Date.now() - this.starttime;
-    const angle = (elapsedTime % (speed * 1000)) / (speed * 1000) * Math.PI * 2;
+    let angle = (elapsedTime % (speed * 1000)) / (speed * 1000) * Math.PI * 2;
+    if (!_SPINNING) {
+      angle = ((1/8) + (1/2)) * Math.PI;
+    }
     const x = center[0] + radius * Math.cos(angle);
     const z = center[1] + radius * Math.sin(angle);
     const y = height;

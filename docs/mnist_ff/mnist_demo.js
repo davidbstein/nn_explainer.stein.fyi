@@ -25,7 +25,7 @@ window.onload = async function () {
   
   const isPresentMode = window.location.hash==="#present";
   if (isPresentMode){
-    const w = 1440;
+    const w = 2200;
     const h = 800;
     demoWindow = window.open(
       'demoWindow.html', 
@@ -126,12 +126,12 @@ window.onload = async function () {
     },
   );
 
-  function startTraining(n, batchSize) {
+  function startTraining(n, batchSize, randomizeImages) {
     document.querySelector("#pause-training").hidden = false;
     document.querySelector("#pause-training").disabled = false;
     networkWorker.postMessage({
       type: 'trainBatch',
-      data: { n, batchSize }
+      data: { n, batchSize, randomizeImages }
     });
   }
 
@@ -176,14 +176,11 @@ window.onload = async function () {
       type: 'requestDampen'
     });
   }
-  // function updateWeights(n) {
-  //   for (let i = 0; i < n; i++) {
-  //     let learningRate = window.LEARNING_RATE;
-  //     alert("FIXME mnist_demo.js:updateWeights(n)")
-  //     //network.backward(window.currentInput, window.currentLabel, learningRate);
-  //   }
-  //   redraw();
-  // }
+  function trainOnOne(n, batch_size=30) {
+    disableButtons(true);
+    startTraining(n / batch_size, batch_size, false);
+  }
+
   function computeBackprop(){
     networkWorker.postMessage({
       type: 'requestBackProp'
@@ -229,7 +226,7 @@ window.onload = async function () {
       q.disabled = disable;
     }
   }
-  async function train(n, batch_size=30) {
+  async function train(n, batch_size=100) {
     disableButtons(true);
     startTraining(n / batch_size, batch_size);
 /*    if (batch_size===1){
@@ -388,16 +385,19 @@ window.onload = async function () {
     trainingRateChanged
   );
   document.querySelector("#update-weights").addEventListener("click", 
-    () => updateWeights(1)
+    () => trainOnOne(1)
   );
   document.querySelector("#update-weights-1000").addEventListener("click", 
-    () => updateWeights(10000)
+    () => trainOnOne(10000)
   );
   document.querySelector("#train-1").addEventListener("click", 
     () => train(1)
   );
   document.querySelector("#train-1000").addEventListener("click", 
-    () => train(10000)
+    () => train(1000)
+  );
+  document.querySelector("#train-50k").addEventListener("click", 
+    () => train(50000)
   );
   document.querySelector("#train-100k").addEventListener("click", 
     () => train(100000)
