@@ -246,7 +246,7 @@ function instrumentInputImage(callback){
       const pixelData = window.currentInput;
       const drawMode = window.drawMode;
       if (!mouseDown) return;
-      let delta = drawMode ? 0.05 : -0.15;
+      let delta = drawMode ? 0.15 : -0.15;
       let rect = e.target.getBoundingClientRect();
       let pixelIdx = parseInt(e.target.dataset.pixelidx);
       pixelData[pixelIdx] = Math.max(0, Math.min(pixelData[pixelIdx]+delta, 1));

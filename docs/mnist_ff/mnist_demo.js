@@ -20,6 +20,29 @@ async function waitForWindowLoad(win) {
     });
 }
 
+function throttle(fn, threshhold, scope) {
+  threshhold || (threshhold = 250);
+  var last,
+      deferTimer;
+  return function () {
+    var context = scope || this;
+
+    var now = +new Date,
+        args = arguments;
+    if (last && now < last + threshhold) {
+      // hold on to it
+      clearTimeout(deferTimer);
+      deferTimer = setTimeout(function () {
+        last = now;
+        fn.apply(context, args);
+      }, threshhold);
+    } else {
+      last = now;
+      fn.apply(context, args);
+    }
+  };
+}
+
 window.onload = async function () {
   let network;
   
@@ -143,7 +166,8 @@ window.onload = async function () {
     window.currentInput = inputs;
     window.currentLabel = label;
     drawNetwork(network, inputs, label);
-    instrumentInputImage(provideImageFromUser);
+    const drawCallback = throttle(provideImageFromUser, 100, this);
+    instrumentInputImage(drawCallback);
   }
 
   function provideImageFromUser(pixelData){
@@ -182,6 +206,7 @@ window.onload = async function () {
   }
 
   function computeBackprop(){
+    demoContent.querySelector("#all-backprop-layers").innerHTML = "";
     networkWorker.postMessage({
       type: 'requestBackProp'
     });
