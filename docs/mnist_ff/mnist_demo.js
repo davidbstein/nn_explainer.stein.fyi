@@ -339,8 +339,8 @@ window.onload = async function () {
   updateCurrentDigits();
   window.mouseDown = false;
   window.drawMode = true;
-  document.body.addEventListener("mousedown", () => window.mouseDown = true);
-  document.body.addEventListener("mouseup", () => window.mouseDown = false);
+  demoContent.body.addEventListener("mousedown", () => window.mouseDown = true);
+  demoContent.body.addEventListener("mouseup", () => window.mouseDown = false);
   //window.LEARNING_RATE = 1;
 
   let layers = [8, 8];
