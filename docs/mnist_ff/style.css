@@ -26,7 +26,7 @@ iframe {
   display: flex;
 }
 #backprop-preview.hidden {
-  display: hidden !important;
+  display: none;
 }
 #network-container {
   position: relative;
@@ -189,7 +189,7 @@ iframe {
 }
 .neuron-weight {
   border: 1px solid #888;
-  background: #888;
+  /*background: #888;*/
   display: flex;
 }
 
@@ -234,6 +234,13 @@ div.neuron-values canvas {
   display: flex;
   align-items: center;
   justify-content: end;
+}
+.hide-neuron-output .neuron-output {
+  width: 0;
+  overflow: hidden;
+}
+.hide-neuron-output .neuron-viz {
+  padding-right: 0;
 }
 .neuron-bias {
     color: #00ffff;

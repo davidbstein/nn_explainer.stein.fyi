@@ -27,6 +27,7 @@ self.onmessage = async function(event) {
       break;
     case 'requestRandomImage':
       loadRandomImage();
+      computeBackpropScores();
       break;
     case 'setCurrentDigits':
       currentDigits = data.currentDigits;
@@ -53,6 +54,7 @@ self.onmessage = async function(event) {
       break;
     case 'provideImageFromUser':
       adjustInputs(data.pixelData);
+      computeBackpropScores();
       break;
     case 'pauseTraining':
       console.warn("STOPPED");
@@ -330,12 +332,6 @@ function getBackProp(network, input, label) {
   // Backward pass, accumulate gradients
   let outputs = network.computeInternals(input);
   let outputGradients = _computeFinalLossGradient(outputs, label);
-/*  let outputGradients = [];
-  for (let k = 0; k < outputs[outputs.length - 1].length; k++) {
-    const output = outputs[outputs.length - 1][k];
-    const target = k === label ? 1 : 0;
-    outputGradients.push((output - target) * (output > 0 ? 1 : 0));
-  }*/
   const loss = outputGradients.reduce((sum, gradient) => sum + gradient ** 2, 0) / 2;
   for (let k = network.layers.length - 1; k >= 0; k--) {
     const layer = network.layers[k];

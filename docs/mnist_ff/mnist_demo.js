@@ -91,14 +91,15 @@ window.onload = async function () {
     switch (type) {
       case 'networkLoaded':
       case 'networkReady':
-        hideBackprop();
         network = data.network;
         updateNetworkViz(data.network, data.inputs, data.label);
         break;
       case 'trainingProgressUpdate':
+        hideBackprop();
         updateProgressBar(...data);
         break;
       case 'trainingRoundComplete':
+        hideBackprop();
         clearProgressBar();
         disableButtons(false);
         CheckpointManager.storeNetworkInLocalStorage(data.network);
@@ -116,7 +117,7 @@ window.onload = async function () {
         processSpaceVizVectorData(data);
         break;
       case 'currentBackpropData':
-        toggleBackprop(data);
+        updateBackprop(data);
         break;
     }
   };
@@ -206,6 +207,7 @@ window.onload = async function () {
   }
 
   function computeBackprop(){
+    toggleBackprop();
     demoContent.querySelector("#all-backprop-layers").innerHTML = "";
     networkWorker.postMessage({
       type: 'requestBackProp'
@@ -325,12 +327,17 @@ window.onload = async function () {
     demoContent.querySelector("#backprop-preview").classList.add("hidden");
   }
 
-  function toggleBackprop(data){
+  function toggleBackprop(){
     const container = demoContent.querySelector("#backprop-preview");
     container.classList.toggle("hidden");
+  }
+
+  function updateBackprop(data){
+    const container = demoContent.querySelector("#backprop-preview");
     drawNeuronGradients(
       container.querySelector("#all-backprop-layers"),
-      data.loss, data.gradients
+      data.loss,
+      data.gradients
     );
   }
 
@@ -429,6 +436,17 @@ window.onload = async function () {
   );
   document.querySelector("#train-1m").addEventListener("click", 
     () => train(100000000)
+  );
+  document.querySelector("#present-button").addEventListener("click",
+    () => {
+      const hash = window.location.hash;
+      if (hash) window.location.hash = "";
+      else window.location.hash = "#present";
+      window.location.reload()
+    }
+  );
+  document.querySelector("#neuron-output-button").addEventListener("click",
+    () => demoContent.querySelector("#all-layers").classList.toggle("hide-neuron-output")
   );
   demoContent.querySelector("#draw-erase-toggle").addEventListener("click", 
     toggleDrawErase
