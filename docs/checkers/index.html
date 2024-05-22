@@ -1,15 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- explicitly declare no favicon -->
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkers Game</title>
+  <link rel="stylesheet" href="reset.css">
   <link rel="stylesheet" href="chrome.css">
+  <script src="/lodash.min.js"></script>
 </head>
 <body>
-  <div id="controls-container"></div>
-  <div id="parameter-container"></div>
-  <div id="board-container"></div>
+  <div id="container">
+    <div id="parameter-label-container">
+      List o' heuristics:
+    </div>
+    <div id="controls-container"></div>
+    <div id="parameter-container"></div>
+    <div id="board-container"></div>
+    <div id="game-state-container"></div>
+  </div>
   <script src="main.js"></script>
 </body>
 </html>
