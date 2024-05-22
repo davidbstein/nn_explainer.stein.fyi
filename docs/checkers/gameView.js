@@ -102,7 +102,7 @@ GameViewHelpers = {
   },
 
   add_cell_ids: () => {
-    const boardContainer = document.getElementById("board-container");
+    const boardContainer = document.getElementById("board");
     for (let square_id = 1; square_id <= 32; square_id++){
       const [r,c] = squareIdToCoordinates(square_id);
       boardContainer.querySelector(`#cell-${r}-${c}`).innerHTML += `<div id='square-id'>${square_id}</div>`;
@@ -121,7 +121,18 @@ GameViewHelpers = {
     sortedParamDivs.forEach((div, i) => {
       div.style.order = i;
     });
-  }, 500)
+  }, 500),
+
+  showAIScores: (gameState) => {
+    const scores = [
+      AIManager.computeScore({boardState: gameState.boardState, currentPlayer: 'w'}),
+      AIManager.computeScore({boardState: gameState.boardState, currentPlayer: 'b'})
+    ]
+    document.querySelector("#status-message").textContent = 
+    `AI score for white: ${scores[0].toFixed(1)}`+
+    "\n" +
+    `AI score for black: ${scores[1].toFixed(1)}`;
+  }
 }
 
 GameView = {
@@ -129,8 +140,13 @@ GameView = {
   _validMoves: [],
   _AIPlayer: false,
 
+  set_game_state_message: (message) => {
+    const gameStateContainer = document.getElementById("game-state-container");
+    gameStateContainer.innerHTML = `<div>${message}</div>`;
+  },
+
   initialize_board_view: () => {
-    const boardContainer = document.getElementById("board-container");
+    const boardContainer = document.getElementById("board");
     boardContainer.innerHTML = "";
     for (let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
@@ -146,12 +162,12 @@ GameView = {
   initialize_control_view: () => {
     const controlsContainer = document.getElementById("controls-container");
     [
-      ["Randomize Parameters", randomizeParameters],
       ["Reset Game", resetGame],
-      ["Let AI Pick Next Move", letAIPlay],
-      ["Let AI Self-Play and Learn 5x", () => letAIPlayAndLearn(5)],
-      ["Let AI Self-Play and Learn 100x", () => letAIPlayAndLearn(100)],
       ["Enable AI Opponent", GameView.toggleAIPlayer],
+      ["Let AI Pick Next Move", letAIPlay],
+      ["Randomize Parameters", randomizeParameters],
+      ["Self-play 5x", () => letAIPlayAndLearn(5)],
+      ["Self-play 100x", () => letAIPlayAndLearn(100)],
     ].map(([name, callback]) => controlsContainer.append(
       GameViewHelpers.createControlButton(name, callback))
     );
@@ -198,6 +214,7 @@ GameView = {
       paramDiv.querySelector(".param-score").textContent = score;
     });
     GameViewHelpers.reorder_parameter_divs_by_value();
+    GameViewHelpers.showAIScores(gameState);
   },
 
   update_game_state_view: () => {
@@ -214,6 +231,7 @@ GameView = {
         gameStateContainer.innerHTML = `<div>${currentPlayer}'s turn</div>`;
       }
     }
+    GameViewHelpers.showAIScores(GameState);
     GameViewHelpers.update_parameter_scores();
     GameViewHelpers.add_cell_ids();
   },

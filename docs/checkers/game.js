@@ -28,7 +28,7 @@ function randomizeParameters() {
 }
 
 function letAIPlay() {
-  let bestMove = AIManager.findBestMove(GameState, 6);
+  let bestMove = AIManager.findBestMove(GameState, 3);
   const [from, to] = bestMove.move;
   GameManager.make_move(from, to);
   GameView.update_board_view();
