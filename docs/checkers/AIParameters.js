@@ -198,8 +198,8 @@ AIParameters = [
     }
   },  
   {
-    tag: "DYKE",
-    name: "Dyke",
+    tag: "LEVEE",
+    name: "Levee",
     description: "The parameter is credited with 1 for each string of passive pieces that occupy three adjacent diagonal squares.",
     value: 1,
     fn: ({boardState, currentPlayer}) => {
