@@ -174,18 +174,22 @@ GameView = {
   },
 
   toggleAIPlayer: () => {
+    let aiState = ""
     switch (GameView._AIPlayer) {
       case 'Inactive':
-        GameView._AIPlayer = 'Black';
+        GameView._AIPlayer = 'b';
+        aiState = "Black";
         break;
       case 'Black':
-        GameView._AIPlayer = 'White';
+        GameView._AIPlayer = 'w';
+        aiState = "White"
         break;
       case 'White':
         GameView._AIPlayer = 'Inactive';
+        aiState = "Inactive";
         break;
     }
-    document.getElementById("enable-ai-opponent").innerText = `Toggle AI Opponent (${GameView._AIPlayer})`
+    document.getElementById("enable-ai-opponent").innerText = `Toggle AI Opponent (${aiState})`;
   },
 
   initialize_parameters_view: () => {
