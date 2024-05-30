@@ -138,7 +138,7 @@ GameViewHelpers = {
 GameView = {
   _selectedPiece: null,
   _validMoves: [],
-  _AIPlayer: false,
+  _AIPlayer: "Inactive",
 
   set_game_state_message: (message) => {
     const gameStateContainer = document.getElementById("game-state-container");
