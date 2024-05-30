@@ -292,7 +292,7 @@ GameView = {
   pieceMoved: (r, c) => {
     console.log(`GameView.pieceMoved: ${r},${c}`);
     if (GameView._selectedPiece && validMoves.some(move => _.isEqual(move.move[1], [r, c]))) {
-      const move_fn = (GameView._AIPlayer !== 'Inactive' && GameManager.currentPlayer !== GameView._AIPlayer) 
+      const move_fn = (GameView._AIPlayer !== 'Inactive' && GameState.currentPlayer !== GameView._AIPlayer) 
         ? GameManager.make_move_and_respond_with_AI 
         : GameManager.make_move;
       const moveSuccessful = move_fn(GameView._selectedPiece, [r, c]);
