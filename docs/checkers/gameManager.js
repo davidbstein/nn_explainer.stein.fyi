@@ -195,13 +195,18 @@ GameManager = {
     if (moveSuccessful) {
       GameView.update_board_view();
     }
-    //sleep
-    while (GameState.currentPlayer === "b") {
+
+    // Ensure the AI responds if the current player matches the active AI player
+    while (GameState.currentPlayer === GameView._AIPlayer) {
       await new Promise(r => setTimeout(r, 200));
       const AIMove = AIManager.findBestMove(GameState, 3);
-      const [f, t] = AIMove.move;
-      GameManager.make_move(f, t);
-      GameView.update_board_view();
+      if (AIMove && AIMove.move) {
+        const [f, t] = AIMove.move;
+        GameManager.make_move(f, t);
+        GameView.update_board_view();
+      } else {
+        break; // Exit if no valid move found
+      }
     }
   }
 }
