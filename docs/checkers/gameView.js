@@ -180,11 +180,11 @@ GameView = {
         GameView._AIPlayer = 'b';
         aiState = "Black";
         break;
-      case 'Black':
+      case 'b':
         GameView._AIPlayer = 'w';
         aiState = "White"
         break;
-      case 'White':
+      case 'w':
         GameView._AIPlayer = 'Inactive';
         aiState = "Inactive";
         break;
