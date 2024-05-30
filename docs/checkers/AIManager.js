@@ -17,7 +17,7 @@ AIManager = {
     const possibleStates = [];
 
     const exploreMultiJumps = (state, moveSequence) => {
-      const nextStates = GameManager.list_valid_moves(state);
+      const nextStates = GameManager.list_valid_moves(state).filter((newState) => newState.currentPlayer === state.currentPlayer);
       if (nextStates.length === 0) {
         possibleStates.push({ gameState: state, moveSequence });
       } else {
