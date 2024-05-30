@@ -15,6 +15,7 @@ async function initializeGame() {
   GameView.update_board_view();
   AIManager.initializeAIManager(); 
   GameView.update_parameters_view();
+  loadAIParametersFromLocalStorage();
 }
 
 function resetGame() {
@@ -37,6 +38,21 @@ function letAIPlay() {
 
 function letAIPlayAndLearn(n) {
   AIManager.learnBetterParameters(n, GameView.update_parameters_view);
+}
+
+function loadAIParametersFromLocalStorage() {
+  const storedParameters = localStorage.getItem('ai_parameters');
+  if (storedParameters) {
+    const parsedParameters = JSON.parse(storedParameters);
+    AIParameters.forEach(param => {
+      const storedParam = parsedParameters.find(p => p.tag === param.tag);
+      if (storedParam) {
+        param.value = storedParam.value;
+      }
+    });
+  } else {
+    console.warn('No AI parameters found in localStorage.');
+  }
 }
 
 initializeGame();
