@@ -174,8 +174,18 @@ GameView = {
   },
 
   toggleAIPlayer: () => {
-    GameView._AIPlayer = !GameView._AIPlayer;
-    document.getElementById("enable-ai-opponent").innerText = GameView._AIPlayer ? "Disable AI Opponent" : "Enable AI Opponent";
+    switch (GameView._AIPlayer) {
+      case 'Inactive':
+        GameView._AIPlayer = 'Black';
+        break;
+      case 'Black':
+        GameView._AIPlayer = 'White';
+        break;
+      case 'White':
+        GameView._AIPlayer = 'Inactive';
+        break;
+    }
+    document.getElementById("enable-ai-opponent").innerText = `Toggle AI Opponent (${GameView._AIPlayer})`
   },
 
   initialize_parameters_view: () => {
@@ -278,7 +288,9 @@ GameView = {
   pieceMoved: (r, c) => {
     console.log(`GameView.pieceMoved: ${r},${c}`);
     if (GameView._selectedPiece && validMoves.some(move => _.isEqual(move.move[1], [r, c]))) {
-      const move_fn = GameView._AIPlayer ? GameManager.make_move_and_respond_with_AI : GameManager.make_move;
+      const move_fn = (GameView._AIPlayer !== 'Inactive' && GameManager.currentPlayer === GameView._AIPlayer) 
+        ? GameManager.make_move_and_respond_with_AI 
+        : GameManager.make_move;
       const moveSuccessful = move_fn(GameView._selectedPiece, [r, c]);
       if (moveSuccessful){
         GameView.update_board_view();
