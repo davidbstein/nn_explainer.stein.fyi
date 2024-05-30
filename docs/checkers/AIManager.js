@@ -12,10 +12,32 @@ AIManager = {
     return score;
   },
 
+  list_possible_next_states: (state) => {
+    const validMoves = GameManager.list_valid_moves(state);
+    const possibleStates = [];
+
+    const exploreMultiJumps = (state, moveSequence) => {
+      const nextStates = GameManager.list_valid_moves(state);
+      if (nextStates.length === 0) {
+        possibleStates.push({ gameState: state, moveSequence });
+      } else {
+        nextStates.forEach(move => {
+          exploreMultiJumps(move.nextGameState, [...moveSequence, move]);
+        });
+      }
+    };
+
+    validMoves.forEach(move => {
+      exploreMultiJumps(move.nextGameState, [move]);
+    });
+
+    return possibleStates;
+  },
+
   findBestMove: (gameState, depth = 3) => {
     const alphaBeta = (state, depth, alpha, beta, maximizingPlayer, initialDepth) => {
       const currentPlayer = state.currentPlayer;
-      const validMoves = GameManager.list_valid_moves(state);
+      const possibleStates = AIManager.list_possible_next_states(state);
 
       if (depth === 0 || GameManager.check_win_condition(state)) {
         return { eval: AIManager.computeScore(state), move: null };
@@ -24,11 +46,11 @@ AIManager = {
       if (maximizingPlayer) {
         let maxEval = -Infinity;
         let bestMove = null;
-        for (const move of validMoves) {
-          const result = alphaBeta(move.nextGameState, depth - 1, alpha, beta, false, initialDepth);
+        for (const { gameState: nextState, moveSequence } of possibleStates) {
+          const result = alphaBeta(nextState, depth - 1, alpha, beta, false, initialDepth);
           if (result.eval > maxEval) {
             maxEval = result.eval;
-            bestMove = move;
+            bestMove = moveSequence[0];
           }
           alpha = Math.max(alpha, result.eval);
           if (beta <= alpha) break;
@@ -37,11 +59,11 @@ AIManager = {
       } else {
         let minEval = Infinity;
         let bestMove = null;
-        for (const move of validMoves) {
-          const result = alphaBeta(move.nextGameState, depth - 1, alpha, beta, true, initialDepth);
+        for (const { gameState: nextState, moveSequence } of possibleStates) {
+          const result = alphaBeta(nextState, depth - 1, alpha, beta, true, initialDepth);
           if (result.eval < minEval) {
             minEval = result.eval;
-            bestMove = move;
+            bestMove = moveSequence[0];
           }
           beta = Math.min(beta, result.eval);
           if (beta <= alpha) break;
