@@ -1,9 +1,28 @@
+/**
+ * the board has white at the bottom, black at the top, with the following numbering:
+ * .. 32 .. 31 .. 30 .. 29
+ * 28 .. 27 .. 26 .. 25 ..
+ * .. 24 .. 23 .. 22 .. 21 
+ * 20 .. 19 .. 18 .. 17 ..
+ * .. 16 .. 15 .. 14 .. 13
+ * 12 .. 11 .. 10 ..  9 ..
+ * ..  8 ..  7 ..  6 ..  5
+ * 4 ..  3 ..  2 ..  1 ..
+ * 
+ * so (7,0) is square 4, (0,7) is square 29
+ */
+
 function squareIdToCoordinates(id) {
   const row = 7 - Math.floor((id - 1) / 4);
   const col = ((id - 1) % 4) * 2 + ((row % 2 === 0) ? 0 : 1);
   return [row, 7 - col];
 }
 
+function coordinatesToSquareId([r, c]) {
+  const row = 7 - r;
+  const col = 7 - c;
+  return 1 + row * 4 + Math.floor(col / 2);
+}
 
 AIParameters = [
   {
@@ -17,11 +36,11 @@ AIParameters = [
         row.forEach((cell, c) => {
           if (cell.toLowerCase() === currentPlayer) {
             if (currentPlayer === "w") {
+              if (r === 4 || r === 5) ADV -= 1;
+              if (r === 2 || r === 3) ADV += 1;
+            } else {
               if (r === 2 || r === 3) ADV -= 1;
               if (r === 4 || r === 5) ADV += 1;
-            } else {
-              if (r === 2 || r === 3) ADV += 1;
-              if (r === 4 || r === 5) ADV -= 1;
             }
           }
         });
@@ -165,16 +184,18 @@ AIParameters = [
   {
     tag: "DIA",
     name: "Double Diagonal File",
-    description: "The parameter is credited with 1 for each passive piece located in the diagonal files terminating in the double-corner squares.",
-    value: 1,
+    description: 
+      "The parameter is credited with 1 for each passive piece located "+
+      "in the diagonal files terminating in the double-corner squares.",
     fn: ({boardState, currentPlayer}) => {
-      const doubleDiagonalSquares = currentPlayer === "w" ? [1, 3, 5, 7, 10, 12, 14, 16, 19, 21, 23, 25, 28, 30, 32] : [1, 3, 6, 8, 11, 13, 15, 18, 20, 22, 25, 27, 29, 32];
+      const doubleDiagonalSquares = [4, 8, 11, 15, 18, 22, 25, 29];
       return doubleDiagonalSquares.reduce((acc, pos) => {
         const r = Math.floor(pos / 8);
         const c = pos % 8;
         return acc + (boardState[r][c].toLowerCase() === currentPlayer ? 1 : 0);
       }, 0);
-    }
+    },
+    value: 1
   },
   {
     tag: "DIAV",
