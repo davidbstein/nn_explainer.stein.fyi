@@ -2,7 +2,7 @@ AIManager = {
   maxMoves: 100,
   learningRate: 0.005,
   initializeAIManager: () => {},
-  parameterClamp: 10,
+  parameterClamp: [-.5, 10],
 
   computeScore: ({ boardState, currentPlayer }) => {
     let score = 0;
@@ -90,8 +90,7 @@ AIManager = {
   },
 
   randomizeParameters: () => {
-    const minValue = -AIManager.parameterClamp;
-    const maxValue = AIManager.parameterClamp;
+    const [minValue, maxValue] = AIManager.parameterClamp;
     AIParameters.forEach(param => {
       param.value = Math.random() * (maxValue - minValue) + minValue;      
     });
@@ -132,8 +131,8 @@ AIManager = {
       const error = outcome - predictedScore;
       AIParameters.forEach(param => {
         param.value += learningRate * error * param.fn(state);
-        const clamp = AIManager.parameterClamp;
-        param.value = Math.max(Math.min(param.value, clamp), -clamp); 
+        const [minValue, maxValue] = AIManager.parameterClamp;
+        param.value = Math.min(maxValue, Math.max(minValue, param.value));
       });
     });
   }
