@@ -1,14 +1,15 @@
 /**
  * the board has white at the bottom, black at the top, with the following numbering:
- * .. 32 .. 31 .. 30 .. 29
- * 28 .. 27 .. 26 .. 25 ..
- * .. 24 .. 23 .. 22 .. 21 
- * 20 .. 19 .. 18 .. 17 ..
- * .. 16 .. 15 .. 14 .. 13
- * 12 .. 11 .. 10 ..  9 ..
- * ..  8 ..  7 ..  6 ..  5
- * 4 ..  3 ..  2 ..  1 ..
- * 
+ * 0   .. 32 .. 31 .. 30 .. 29
+ * 1   28 .. 27 .. 26 .. 25 ..
+ * 2   .. 24 .. 23 .. 22 .. 21 
+ * 3   20 .. 19 .. 18 .. 17 ..
+ * 4   .. 16 .. 15 .. 14 .. 13
+ * 5   12 .. 11 .. 10 ..  9 ..
+ * 6   ..  8 ..  7 ..  6 ..  5
+ * 7    4 ..  3 ..  2 ..  1 ..
+ *
+ *      0  1  2  3  4  5  6  7
  * so (7,0) is square 4, (0,7) is square 29
  */
 
@@ -32,19 +33,14 @@ AIParameters = [
     value: 1, 
     fn: ({boardState, currentPlayer}) => {
       let ADV = 0;
-      boardState.forEach((row, r) => {
-        row.forEach((cell, c) => {
-          if (cell.toLowerCase() === currentPlayer) {
-            if (currentPlayer === "w") {
-              if (r === 4 || r === 5) ADV -= 1;
-              if (r === 2 || r === 3) ADV += 1;
-            } else {
-              if (r === 2 || r === 3) ADV -= 1;
-              if (r === 4 || r === 5) ADV += 1;
-            }
-          }
-        });
-      });
+      for (var i = 2; i<=5; i++) {
+        const sum = boardState[i].map((square) => {
+          if ("bB".indexOf(square) >= 0) return 1;
+          else if ("wW".indexOf(square) >= 0) return -1;
+          else return 0;
+        }).reduce((partialSum, a) => partialSum + a, 0);
+        ADV += currentPlayer == 'w' ? sum : -sum;
+      }
       return ADV;
     }
   },
