@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gradient Descent Visualization</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+              justify-content: space-between;
+              height: 100vh;
+              margin: 0;
+              padding: 0;
+        }
+        input, select, button {
+            margin: 5px;
+        }
+        .equation {
+            font-size: 20px;
+        }
+        .equation .param { color: green; }
+        .equation .variable { color: blue; }
+        canvas {
+            border: 1px solid white;
+            background-color: black;
+        }
+#sliders label {
+  display: inline-block;
+  width: 5em;
+  text-align: right;
+  font-family: monospace;
+  vertical-align: middle;
+}
+#sliders {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#lossDisplayBar {
+    display: inline-block;
+    height:  1em;
+    width: 1em;
+    border: 1px solid red;
+    white-space: nowrap;
+}
+
+    </style>
+</head>
+<body>
+    <div>
+        <label>Equation (use: x, a, b, c, m, +, -, *, or /):</label>
+        <div>
+            <input type="text" id="equationInput" value="m*x + b" oninput="updateEquation()">
+            <button onclick="document.querySelector('#equationInput').value='a*x*x + b*x + c';updateEquation()">ax²+bx+c</button>
+            <button onclick="document.querySelector('#equationInput').value='m*x + b';updateEquation()">mx+b</button>
+        </div>
+    </div>
+    <div>
+        <label>Loss Function:</label>
+        <input type="radio" name="lossFunction" value="linear" checked onchange="updateCanvas()"> Vertical Distance
+        <input type="radio" name="lossFunction" value="squared" onchange="updateCanvas()"> Shortest Distance
+    <div>
+    <div>
+        <button onclick="clearPoints()">Clear Points</button>
+    </div>
+    <canvas id="plot" width="500" height="400"></canvas>
+    <div class="equation" id="equationDisplay">y = </div>
+    <div><div id='lossDisplayBar'>Loss: <span id="lossDisplay">0</span></div></div>
+    <div id="sliders"></div>
+    <script>
+        const n = 4;
+        let params = { a: 1, b: 0, c: 0, m: 1 };
+        let points = [
+            {x: Math.random() * n - n/2, y: Math.random() * n - n/2},
+            {x: Math.random() * n - n/2, y: Math.random() * n - n/2},
+            {x: Math.random() * n - n/2, y: Math.random() * n - n/2},
+        ];
+        const canvas = document.getElementById("plot");
+        const ctx = canvas.getContext("2d");
+
+
+        function findClosestPointOnCurve(pt) {
+            let eq = document.getElementById("equationInput").value;
+            let f = (x) => new Function("x", "a", "b", "c", "m", "return " + eq)(x, params.a, params.b, params.c, params.m);
+
+            let minDist = Infinity;
+            let bestX = pt.x;
+
+            for (let i = -5; i <= 5; i += 0.01) {
+                let yCandidate = f(i);
+                let dist = Math.pow(i - pt.x, 2) + Math.pow(yCandidate - pt.y, 2);
+                if (dist < minDist) {
+                    minDist = dist;
+                    bestX = i;
+                }
+            }
+
+            return { x: bestX, y: f(bestX) };
+        }
+
+        function updateEquation() {
+            let eq = document.getElementById("equationInput").value;
+            let formattedEq = eq.replace(/([abcm])/g, '<span class="param">$1</span>')
+                                .replace(/x/g, '<span class="variable">x</span>');
+            document.getElementById("equationDisplay").innerHTML = "y = " + formattedEq;
+            createSliders(eq);
+            updateCanvas();
+        }
+
+        function createSliders(eq) {
+            let sliderDiv = document.getElementById("sliders");
+            sliderDiv.innerHTML = "";
+            let usedParams = Object.keys(params).filter(p => eq.includes(p));
+            usedParams.forEach(p => {
+                let slider = document.createElement("input");
+                slider.type = "range";
+                slider.min = "-2";
+                slider.max = "2";
+                slider.step = "0.01";
+                slider.value = params[p];
+                slider.oninput = function() { params[p] = parseFloat(this.value); updateCanvas(); };
+                let label = document.createElement("label");
+                label.innerText = p + "=" + slider.value;
+                slider.oninput = function() {
+                    params[p] = parseFloat(this.value);
+                    label.innerText = p + "=" + this.value;
+                    updateCanvas();
+                };
+                sliderDiv.appendChild(label);
+                sliderDiv.appendChild(slider);
+                sliderDiv.appendChild(document.createElement("br"));
+            });
+        }
+
+        canvas.addEventListener("click", function(event) {
+            let rect = canvas.getBoundingClientRect();
+            let x = (event.clientX - rect.left) / 50 - 5;
+            let y = -(event.clientY - rect.top) / 50 + 4;
+            points.push({ x, y });
+            updateCanvas();
+        });
+
+        function evaluateEquation(x) {
+            let eq = document.getElementById("equationInput").value;
+            return new Function("x", "a", "b", "c", "m", "return " + eq)(x, params.a, params.b, params.c, params.m);
+        }
+
+        function computeLoss() {
+            let lossType = document.querySelector("input[name='lossFunction']:checked").value;
+            let loss = 0;
+
+            points.forEach(pt => {
+                let proj = findClosestPointOnCurve(pt); // Get the closest projection on the function
+                let error = Math.sqrt(Math.pow(proj.x - pt.x, 2) + Math.pow(proj.y - pt.y, 2)); // Distance
+
+                if (lossType === "squared") {
+                    loss += error * error;
+                } else {
+                    loss += error;
+                }
+            });
+
+            document.getElementById("lossDisplay").innerText = loss.toFixed(2);
+
+            document.getElementById("lossDisplayBar").style.width = `${loss * 20}px`;
+        }
+
+
+
+        function clearPoints() {
+            points = [];
+            updateCanvas();
+        }
+
+        function updateCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+            for (let i = 0; i <= 500; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, 400);
+                ctx.moveTo(0, i);
+                ctx.lineTo(500, i);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+            ctx.beginPath();
+            ctx.moveTo(250, 0);
+            ctx.lineTo(250, 400);
+            ctx.moveTo(0, 200);
+            ctx.lineTo(500, 200);
+            ctx.stroke();
+
+            ctx.strokeStyle = "white";
+            ctx.beginPath();
+            for (let i = -5; i <= 5; i += 0.1) {
+                let x = i;
+                let y = evaluateEquation(x);
+                let screenX = (x + 5) * 50;
+                let screenY = (4 - y) * 50;
+                if (i === -5) ctx.moveTo(screenX, screenY);
+                else ctx.lineTo(screenX, screenY);
+            }
+            ctx.stroke();
+            ctx.fillStyle = "cyan";
+            points.forEach(pt => {
+                let screenX = (pt.x + 5) * 50;
+                let screenY = (4 - pt.y) * 50;
+                ctx.fillRect(screenX - 3, screenY - 3, 6, 6);
+            });
+            ctx.strokeStyle = "red";
+            ctx.fillStyle = "red";
+            points.forEach(pt => {
+                let yPred = evaluateEquation(pt.x);
+                let screenX = (pt.x + 5) * 50;
+                let trueY = (4 - pt.y) * 50;
+                let predY = (4 - yPred) * 50;
+                if (document.querySelector("input[name='lossFunction']:checked").value === "squared") {
+                    let proj = findClosestPointOnCurve(pt);
+                    let screenX2 = (proj.x + 5) * 50;
+                    let screenY2 = (4 - proj.y) * 50;
+/*                    ctx.strokeRect(Math.min(screenX, screenX2), Math.min(trueY, screenY2),
+                                   Math.abs(screenX - screenX2), Math.abs(trueY - screenY2));
+*/
+                    ctx.beginPath();
+                    ctx.moveTo(screenX, trueY);
+                    ctx.lineTo(screenX2, screenY2);
+                    ctx.stroke();
+
+                } else {
+                    ctx.beginPath();
+                    ctx.moveTo(screenX, trueY);
+                    ctx.lineTo(screenX, predY);
+                    ctx.stroke();
+                }
+            });
+            computeLoss();
+        }
+
+        updateEquation();
+    </script>
+</body>
+</html>
